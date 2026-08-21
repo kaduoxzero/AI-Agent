@@ -1,0 +1,4 @@
+{"document_id":"doc-a-001","tenant_id":"tenant-a","department":"supply-chain","title":"供应商A交付异常记录","content":"供应商A在最近30天出现3次延迟交付，其中2次超过5天，采购团队已要求进入重点复核。"}
+{"document_id":"doc-a-002","tenant_id":"tenant-a","department":"risk","title":"供应商风险处置规则","content":"若供应商在30天内出现3次及以上延迟交付，应进入人工复核，并评估是否需要降低采购额度。"}
+{"document_id":"doc-b-001","tenant_id":"tenant-b","department":"supply-chain","title":"供应商B月度表现","content":"供应商B最近30天无延迟交付，质量抽检通过率为99.2%。"}
+{"document_id":"doc-b-002","tenant_id":"tenant-b","department":"risk","title":"供应商B风险备注","content":"当前未发现需要升级处理的交付风险。"}
