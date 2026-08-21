@@ -6,20 +6,32 @@ x-platform-env: &platform-env
   EVENT_KEY_PREFIX: agent-platform:events
   DEFAULT_AGENT_ID: research-platform
   MIN_RELEASE_EVAL_SCORE: "0.8"
+  AUTO_CREATE_SCHEMA: "false"
 
-x-platform-depends: &platform-depends
+x-infra-depends: &infra-depends
   postgres:
     condition: service_healthy
   redis:
     condition: service_healthy
 
 services:
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    environment: *platform-env
+    depends_on: *infra-depends
+    restart: "no"
+
   api:
     build: .
     ports:
       - "8000:8000"
     environment: *platform-env
-    depends_on: *platform-depends
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     volumes:
       - agent_artifacts:/data/artifacts
@@ -28,7 +40,11 @@ services:
     build: .
     command: ["python", "-m", "apps.worker.main"]
     environment: *platform-env
-    depends_on: *platform-depends
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     volumes:
       - agent_artifacts:/data/artifacts
@@ -62,7 +78,21 @@ services:
     volumes:
       - agent_redis_data:/data
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - agent_prometheus_data:/prometheus
+    depends_on:
+      - api
+
 volumes:
   agent_pg_data:
   agent_redis_data:
   agent_artifacts:
+  agent_prometheus_data:
