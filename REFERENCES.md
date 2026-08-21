@@ -14,12 +14,32 @@
 - Microsoft Agent Framework Overview: https://learn.microsoft.com/en-us/agent-framework/overview/
 - Microsoft Agent Harness: https://learn.microsoft.com/en-us/agent-framework/get-started/harness
 
-## Protocol
+## Agent Protocol / Interoperability
+
+### Agent ↔ Tool / Data
 
 - Model Context Protocol: https://modelcontextprotocol.io/
 - MCP 2026-07-28 Release: https://blog.modelcontextprotocol.io/posts/2026-07-28/
+
+### Agent ↔ Agent
+
 - A2A Protocol: https://a2a-protocol.org/latest/
-- A2A 1.0 Specification: https://a2a-protocol.org/latest/specification/
+- A2A Specification: https://a2a-protocol.org/latest/specification/
+
+### Agent ↔ User / Frontend
+
+- AG-UI Repository: https://github.com/ag-ui-protocol/ag-ui
+- AG-UI Overview: https://github.com/ag-ui-protocol/ag-ui/blob/main/docs/introduction.mdx
+- AG-UI Events: https://github.com/ag-ui-protocol/ag-ui/blob/main/docs/concepts/events.mdx
+
+## Agent Identity / Authentication / Authorization
+
+- Microsoft Entra Agent ID: https://learn.microsoft.com/en-us/entra/agent-id/
+- Microsoft Entra Agent Identities: https://learn.microsoft.com/en-us/entra/agent-id/agent-identities
+- Microsoft Entra Agent Authorization: https://learn.microsoft.com/en-us/entra/agent-id/authorization-agent-id
+- IETF Internet-Draft — AI Agent Authentication and Authorization: https://datatracker.ietf.org/doc/draft-klrc-aiagent-auth/
+
+> 注意：IETF Internet-Draft 属于持续演进中的工作文档，不应当作已经完成标准化的正式 RFC。学习重点是理解 Workload Identity、OAuth、Delegation、Token Exchange 和最小权限等设计思想。
 
 ## Security
 
@@ -27,10 +47,38 @@
 - OWASP Agentic Security Initiative: https://genai.owasp.org/initiatives/agentic-security-initiative/
 - OWASP Memory & Context Poisoning: https://genai.owasp.org/2026/05/13/memory-is-a-feature-it-is-also-an-attack-surface/
 
-## Observability
+## Observability / Reliability
 
 - OpenTelemetry: https://opentelemetry.io/
 - LangSmith: https://www.langchain.com/langsmith
+- Google SRE Books: https://sre.google/books/
+
+## Identity / Authorization 基础标准
+
+进一步学习 Agent Identity 前，建议理解：
+
+- OAuth 2.0 / OAuth 2.1 演进；
+- JWT；
+- OAuth Token Exchange；
+- Workload Identity Federation；
+- Zero Trust；
+- RBAC / ABAC；
+- Short-lived Credentials。
+
+## Data / Backend / Platform 基础
+
+Agent 全能工程师还应熟悉：
+
+- PostgreSQL；
+- Redis；
+- Message Queue；
+- Object Storage；
+- Docker / Kubernetes；
+- API Gateway；
+- Secret Manager；
+- CI/CD；
+- OpenTelemetry；
+- SLI / SLO / Error Budget。
 
 ## 经典 Agent Pattern 论文方向
 
@@ -45,16 +93,19 @@
 
 ## 阅读建议
 
-学习一个新框架时，不要先背 API。先回答：
+学习一个新框架 / 协议时，不要先背 API。先回答：
 
 ```text
-它的 Agent 是什么？
-Runtime 在哪？
+它解决哪个系统边界的问题？
+它的 Agent / Runtime 是什么？
 State 如何保存？
 Tool 如何执行？
+Identity 如何验证？
+权限在哪里判断？
 HITL 怎么暂停恢复？
 Memory 怎么分层？
 Trace 怎么导出？
+如何测试故障？
 生产部署怎么做？
 ```
 
