@@ -13,7 +13,6 @@ from packages.events import EventStore
 from packages.model_gateway import ModelGateway
 from packages.policy import PolicyEngine
 from packages.rag import ReferenceRetriever
-from packages.registry import AgentRegistry
 from packages.repositories import TaskRepository
 from packages.tools import ToolGateway
 
@@ -29,7 +28,6 @@ class AgentRuntime:
         events: EventStore,
         checkpoints: CheckpointStore,
         artifacts: ArtifactStore,
-        registry: AgentRegistry,
         model_gateway: ModelGateway,
         retriever: ReferenceRetriever,
         tools: ToolGateway,
@@ -39,7 +37,6 @@ class AgentRuntime:
         self.events = events
         self.checkpoints = checkpoints
         self.artifacts = artifacts
-        self.registry = registry
         self.model_gateway = model_gateway
         self.retriever = retriever
         self.tools = tools
@@ -89,9 +86,8 @@ class AgentRuntime:
         name: str,
         args: dict,
         scopes: set[str],
-        allowed_tools: set[str],
     ):
-        if name not in allowed_tools:
+        if name not in set(task.allowed_tools):
             raise PermissionError(
                 f"tool {name} is not allowed for {task.agent_id}@{task.agent_version}"
             )
@@ -107,12 +103,6 @@ class AgentRuntime:
         cancelled = await self._cancel_if_requested(task)
         if cancelled is not None:
             return cancelled
-
-        try:
-            definition = self.registry.get(task.agent_id, task.agent_version)
-        except KeyError as exc:
-            task = task.transition(TaskStatus.FAILED, error=str(exc))
-            return await self._save(task, "RunFailed", error=task.error, category="agent_release")
 
         if self.policy.requires_approval(task) and task.approval_status != ApprovalStatus.APPROVED:
             task = task.transition(
@@ -133,8 +123,8 @@ class AgentRuntime:
                     trace_id=task.trace_id,
                     agent_id=task.agent_id,
                     agent_version=task.agent_version,
-                    prompt_version=definition.prompt_version,
-                    model_route=definition.model_route,
+                    prompt_version=task.prompt_version,
+                    model_route=task.model_route,
                 )
                 task = task.patch(
                     step_count=task.step_count + 1,
@@ -156,7 +146,6 @@ class AgentRuntime:
             evidence = list(checkpoint.evidence)
             completed = set(checkpoint.completed_actions)
             scopes = self.policy.scopes_for(task)
-            allowed_tools = set(definition.allowed_tools)
 
             if (
                 "retrieve_internal_knowledge" in checkpoint.plan
@@ -183,15 +172,7 @@ class AgentRuntime:
                     tool_calls=task.tool_calls + 1,
                 )
                 self._check_budget(task)
-                evidence.extend(
-                    await self._call_tool(
-                        task,
-                        "search_public_sources",
-                        {},
-                        scopes,
-                        allowed_tools,
-                    )
-                )
+                evidence.extend(await self._call_tool(task, "search_public_sources", {}, scopes))
                 task = await self._save(task, "ToolCompleted", tool="search_public_sources")
                 checkpoint = await self._checkpoint_action(
                     checkpoint, "search_public_sources", evidence
@@ -216,7 +197,6 @@ class AgentRuntime:
                         "get_supplier_metrics",
                         {"supplier": "supplier-a"},
                         scopes,
-                        allowed_tools,
                     )
                 )
                 task = await self._save(task, "ToolCompleted", tool="get_supplier_metrics")
@@ -236,8 +216,8 @@ class AgentRuntime:
                     **content,
                     "agent_id": task.agent_id,
                     "agent_version": task.agent_version,
-                    "prompt_version": definition.prompt_version,
-                    "model_route": definition.model_route,
+                    "prompt_version": task.prompt_version,
+                    "model_route": task.model_route,
                 },
                 evidence=evidence,
             )
