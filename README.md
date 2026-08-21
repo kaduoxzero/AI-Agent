@@ -2,23 +2,35 @@
 
 > 面向有一定 AI 与软件开发基础的开发人员。目标不是“会调用一个 Agent 框架”，而是能够从 0 到 1 **设计、实现、评估、部署、治理并维护真实的大型 Agent / Multi-Agent 平台**。
 
-## 这不是一套“Agent 名词大全”
+## 当前仓库已经包含什么
 
-本仓库采用四层学习体系：
+这不是只有 Markdown 的知识库。当前仓库已经形成四层学习体系：
 
 ```text
 Layer 1｜Knowledge
 核心概念、原理、Pattern、Framework
         ↓
 Layer 2｜Practice
-Examples + Hands-on Labs
+18 个可运行 Hands-on Labs
         ↓
 Layer 3｜Engineering
-Schemas + ADR + Reference Architecture + Eval
+Golden Evals + Schemas + ADR + Reference Architecture + CI
         ↓
 Layer 4｜Production
-大型项目 + Security + SRE + Platform Engineering
+Reference Platform Starter + Security + SRE + Platform Engineering
 ```
+
+当前工程化资产包括：
+
+- **15 个知识领域**：从模型、Context、Tool、RAG、Pattern、Multi-Agent 到 Runtime、Security、SRE、Platform；
+- **18 个实际 Lab**：每个 Lab 都有代码和工程验收目标；
+- **Golden Dataset / Security Red Team Dataset**：用于 Output、Trajectory、Tool、安全回归；
+- **GitHub Actions**：自动执行 Lab 和 Reference Starter 测试；
+- **Reference Agent Platform Starter**：FastAPI Task API、Typed Contract、Dockerfile、PostgreSQL、Redis、API Test；
+- **Reference Architecture**：统一生产级 Agent 平台架构蓝图；
+- **Schemas / ADR / Glossary / References**：数据契约、架构决策、术语与官方资料。
+
+> 注意：GitHub Actions Workflow 已经写入仓库，但是否通过应以仓库 Actions 页面中的实际 Check Run 为准；不要把“存在 CI 配置”与“当前 CI 已绿”混为一谈。
 
 最终目标是完成从：
 
@@ -78,7 +90,11 @@ Backend / Event Driven / SRE / DevOps
   ↓
 Agent Platform Engineering
   ↓
-综合项目 + Labs
+18 Labs
+  ↓
+Reference Agent Platform
+  ↓
+生产级毕业项目
 ```
 
 # 完整学习目录
@@ -178,13 +194,57 @@ Agent Platform Engineering
 
 # 工程实训与规范
 
-- [Hands-on Labs：18 个 Agent 工程实训](labs/README.md)
+- [Hands-on Labs：18 个已实现 Agent 工程实训](labs/README.md)
+- [Reference Agent Platform Starter：可启动工程脚手架](reference-architecture/starter/README.md)
+- [Production Reference Architecture：生产架构蓝图](reference-architecture/README.md)
+- [Golden Evals](evals/)
 - [Examples：最小可运行示例规划](examples/README.md)
 - [Shared Schemas：Task / Event / Artifact / Evidence 数据契约](schemas/README.md)
 - [ADR：Architecture Decision Records](adrs/README.md)
-- [Production Reference Architecture](reference-architecture/README.md)
 - [Agent Engineering 专业名词速查](GLOSSARY.md)
 - [官方资料与继续学习索引](REFERENCES.md)
+
+# 18 个实训覆盖的工程链
+
+```text
+01 Structured Output
+ ↓
+02 Tool Runtime
+ ↓
+03 MCP Server
+ ↓
+04 Enterprise RAG
+ ↓
+05 Agent Loop
+ ↓
+06 LangGraph HITL
+ ↓
+07 Agent Eval
+ ↓
+08 Model Gateway
+ ↓
+09 Agentic RAG
+ ↓
+10 Memory Engineering
+ ↓
+11 Multi-Agent + Typed Artifact
+ ↓
+12 Agent Identity / Delegation
+ ↓
+13 AG-UI Event Console
+ ↓
+14 Sandbox Coding Agent
+ ↓
+15 Security Red Team
+ ↓
+16 Event-Driven Agent
+ ↓
+17 Agent SRE
+ ↓
+18 Agent Platform / Canary / Rollback
+```
+
+完成后再进入 `reference-architecture/starter/`，把这些能力逐步装配到同一个 Agent Platform 中。
 
 # 每篇知识文档的统一标准
 
