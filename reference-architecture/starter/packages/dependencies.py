@@ -47,7 +47,10 @@ def build_container(settings: Settings | None = None) -> Container:
     settings = settings or Settings.from_env()
 
     if settings.database_url:
-        repository: TaskRepository = PostgresTaskRepository(settings.database_url)
+        repository: TaskRepository = PostgresTaskRepository(
+            settings.database_url,
+            auto_create_schema=settings.auto_create_schema,
+        )
     else:
         repository = InMemoryTaskRepository()
 
