@@ -2,7 +2,38 @@
 
 本文件是 `agent-engineering-master/SKILL.md` 的能力注册表。
 
-Master Skill 可以在同一个用户任务中按需加载、退出、重新进入以下 Skill，而不是只在任务开头选择一次。
+Master Skill 可以在同一个用户任务中按需加载、退出、重新进入其他 Skill，而不是只在任务开头选择一次。
+
+---
+
+## Mandatory Bootstrap
+
+在调用任何专项 Skill 之前，Master **必须先执行项目状态引导流程**：
+
+1. 读取 `PROJECT-STATE-POLICY.md`；
+2. 解析当前业务项目的 Project Root；
+3. 检查 `<project>/.agent-engineering/project.yaml`；
+4. 如果不存在，则使用 `../templates/` 中的只读模板初始化当前项目独立状态；
+5. 如果已经存在，则读取当前项目自己的 Boundary、Decision、Session、Verification；
+6. 后续所有状态更新都只写 `<project>/.agent-engineering/`；
+7. **禁止写入 `../templates/`。**
+
+状态模型：
+
+```text
+skills/templates/                  Shared + Read Only
+        ↓ instantiate
+Project A/.agent-engineering/      Project A State
+Project B/.agent-engineering/      Project B State
+```
+
+两个项目之间不得自动共享 Decision、Boundary、Session 或 Verification。
+
+如果用户明确要求跨项目比较或迁移，可以读取其他项目状态作为输入，但不得隐式合并。
+
+---
+
+## Capability Registry
 
 | Capability | Skill | Trigger Examples |
 |---|---|---|
@@ -18,6 +49,8 @@ Master Skill 可以在同一个用户任务中按需加载、退出、重新进�
 | Security | `../agent-security-reviewer/SKILL.md` | Injection、权限、Identity、敏感 Tool、HITL |
 | Performance | `../agent-performance-cost-optimizer/SKILL.md` | Token、Latency、Concurrency、Cost |
 | Production | `../agent-productionizer/SKILL.md` | Queue、Worker、Checkpoint、Deploy、SRE |
+
+---
 
 ## Runtime Skill Switching
 
@@ -76,11 +109,15 @@ Performance Optimizer
 返回 Greenfield Builder
 ```
 
+---
+
 ## Context Passing Contract
 
 Skill 切换时至少传递：
 
 ```text
+Project ID
+Project Root
 Goal
 Current Stage
 Confirmed Boundaries
@@ -93,7 +130,45 @@ Verification Evidence
 Return Point
 ```
 
+这些信息应优先来自当前项目：
+
+```text
+<project>/.agent-engineering/
+```
+
 禁止仅把用户最初一句需求传给下一个 Skill，否则会丢失已经做出的架构决定。
+
+禁止从另一个项目的 `.agent-engineering/` 自动继承状态。
+
+---
+
+## State Write Routing
+
+专项 Skill 返回 Master 后，结果按类型写回当前项目：
+
+```text
+Boundary changed
+→ .agent-engineering/boundary-canvas.md
+
+Architecture decision
+→ .agent-engineering/decision-ledger.md
+
+Current task progress
+→ .agent-engineering/current-session.md
+
+Blast Radius / Migration impact
+→ .agent-engineering/change-impact.md
+
+Verification / Eval / Security evidence
+→ .agent-engineering/verification-report.md
+
+Completed task summary
+→ .agent-engineering/history/
+```
+
+`skills/templates/` 永远不作为写入目标。
+
+---
 
 ## Return Contract
 
