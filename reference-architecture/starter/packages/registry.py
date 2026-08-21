@@ -23,18 +23,20 @@ class AgentRegistry:
         self.definitions[(definition.agent_id, definition.version)] = definition
         return definition
 
+    def get(self, agent_id: str, version: str) -> AgentDefinition:
+        definition = self.definitions.get((agent_id, version))
+        if definition is None or not definition.enabled:
+            raise KeyError(f"unavailable agent: {agent_id}@{version}")
+        return definition
+
     def record_eval(self, result: EvalResult) -> EvalResult:
         self.evals.setdefault((result.agent_id, result.version), []).append(result)
         return result
 
     def release(self, route: ReleaseRoute) -> ReleaseRoute:
-        stable = self.definitions.get((route.agent_id, route.stable_version))
-        if stable is None or not stable.enabled:
-            raise ReleaseRejected("stable version is missing or disabled")
+        stable = self.get(route.agent_id, route.stable_version)
         if route.canary_version:
-            canary = self.definitions.get((route.agent_id, route.canary_version))
-            if canary is None or not canary.enabled:
-                raise ReleaseRejected("canary version is missing or disabled")
+            self.get(route.agent_id, route.canary_version)
             self._require_eval_gate(route.agent_id, route.canary_version)
         self.routes[route.agent_id] = route
         return route
@@ -65,10 +67,7 @@ class AgentRegistry:
             bucket = int(hashlib.sha256(routing_key.encode("utf-8")).hexdigest()[:8], 16) % 100
             if bucket < route.canary_percent:
                 version = route.canary_version
-        definition = self.definitions.get((agent_id, version))
-        if definition is None or not definition.enabled:
-            raise KeyError(f"unavailable agent release: {agent_id}@{version}")
-        return definition
+        return self.get(agent_id, version)
 
     def list_agents(self) -> list[AgentDefinition]:
         return sorted(self.definitions.values(), key=lambda item: (item.agent_id, item.version))
