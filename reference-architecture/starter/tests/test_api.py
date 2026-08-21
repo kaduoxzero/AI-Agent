@@ -6,6 +6,7 @@ from apps.api.main import app
 client = TestClient(app)
 TENANT_A = {"X-Tenant-ID": "tenant-a", "X-User-ID": "user-001"}
 TENANT_B = {"X-Tenant-ID": "tenant-b", "X-User-ID": "user-002"}
+ADMIN = {"X-Platform-Admin": "true"}
 
 
 def test_health() -> None:
@@ -34,6 +35,8 @@ def test_create_get_cancel_and_events() -> None:
     assert task["status"] == "PENDING"
     assert task["tenant_id"] == "tenant-a"
     assert task["user_id"] == "user-001"
+    assert task["agent_id"] == "research-platform"
+    assert task["agent_version"] == "1.0.0"
     assert task["trace_id"]
 
     task_id = task["task_id"]
@@ -88,3 +91,69 @@ def test_list_tasks_is_tenant_scoped() -> None:
 def test_missing_task_returns_404() -> None:
     response = client.get("/tasks/does-not-exist", headers=TENANT_A)
     assert response.status_code == 404
+
+
+def test_control_plane_requires_admin_permission() -> None:
+    assert client.get("/control-plane/agents").status_code == 403
+    assert client.get("/control-plane/agents", headers=ADMIN).status_code == 200
+
+
+def test_canary_release_is_blocked_until_eval_passes() -> None:
+    definition = {
+        "agent_id": "research-platform",
+        "version": "2.0.0-test",
+        "prompt_version": "research-v2-test",
+        "model_route": "default",
+        "allowed_tools": ["search_public_sources", "get_supplier_metrics"],
+        "enabled": True,
+    }
+    assert client.post("/control-plane/agents", headers=ADMIN, json=definition).status_code == 200
+
+    route = {
+        "agent_id": "research-platform",
+        "stable_version": "1.0.0",
+        "canary_version": "2.0.0-test",
+        "canary_percent": 100,
+    }
+    blocked = client.put(
+        "/control-plane/releases/research-platform",
+        headers=ADMIN,
+        json=route,
+    )
+    assert blocked.status_code == 409
+
+    eval_result = {
+        "agent_id": "research-platform",
+        "version": "2.0.0-test",
+        "suite": "golden+security",
+        "score": 0.95,
+        "passed": True,
+        "metrics": {"task_success": 0.96, "security": 1.0},
+    }
+    assert client.post("/control-plane/evals", headers=ADMIN, json=eval_result).status_code == 200
+    released = client.put(
+        "/control-plane/releases/research-platform",
+        headers=ADMIN,
+        json=route,
+    )
+    assert released.status_code == 200
+
+    task = client.post(
+        "/tasks",
+        headers={**TENANT_A, "Idempotency-Key": "canary-test-request"},
+        json={"query": "验证 canary 分配"},
+    ).json()
+    assert task["agent_version"] == "2.0.0-test"
+
+    # Restore default route so the test suite does not leak mutable control-plane state.
+    restore = {
+        "agent_id": "research-platform",
+        "stable_version": "1.0.0",
+        "canary_version": None,
+        "canary_percent": 0,
+    }
+    assert client.put(
+        "/control-plane/releases/research-platform",
+        headers=ADMIN,
+        json=restore,
+    ).status_code == 200
