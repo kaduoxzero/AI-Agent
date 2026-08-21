@@ -7,6 +7,7 @@ from typing import Annotated, AsyncIterator
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 
+from apps.api.observability import router as observability_router
 from packages.contracts import (
     AgentDefinition,
     ApprovalCommand,
@@ -21,6 +22,7 @@ from packages.contracts import (
     TaskStatus,
 )
 from packages.dependencies import container
+from packages.metrics import APPROVALS, TASKS_CREATED
 from packages.registry import ReleaseRejected
 
 
@@ -67,9 +69,10 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Reference Agent Platform",
-    version="0.5.0",
+    version="0.6.0",
     lifespan=lifespan,
 )
+app.include_router(observability_router)
 
 
 async def owned_task(task_id: str, identity: RequestIdentity) -> TaskRecord:
@@ -103,8 +106,6 @@ async def create_task(
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    # Release manifest is snapshotted into the Task. The worker does not consult a
-    # mutable Control Plane during execution, which makes retries reproducible.
     command = TaskCreate(
         tenant_id=identity.tenant_id,
         user_id=identity.user_id,
@@ -120,6 +121,10 @@ async def create_task(
     )
     task, created = await container.repository.create(command)
     if created:
+        TASKS_CREATED.labels(
+            agent_id=task.agent_id,
+            agent_version=task.agent_version,
+        ).inc()
         await container.events.publish(
             task.task_id,
             "TaskCreated",
@@ -234,6 +239,9 @@ async def decide_approval(
     if task.status != TaskStatus.WAITING_APPROVAL:
         raise HTTPException(status_code=409, detail="task is not waiting for approval")
 
+    decision = "approved" if command.approve else "rejected"
+    APPROVALS.labels(decision=decision).inc()
+
     if command.approve:
         task = task.transition(
             TaskStatus.PENDING,
@@ -244,7 +252,7 @@ async def decide_approval(
         await container.events.publish(
             task_id,
             "ApprovalResolved",
-            decision="approved",
+            decision=decision,
             actor_id=identity.user_id,
         )
         await container.queue.enqueue(task_id)
@@ -260,7 +268,7 @@ async def decide_approval(
     await container.events.publish(
         task_id,
         "ApprovalResolved",
-        decision="rejected",
+        decision=decision,
         actor_id=identity.user_id,
     )
     return task
