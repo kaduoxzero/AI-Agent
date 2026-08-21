@@ -14,6 +14,7 @@ from packages.model_gateway import DeterministicProvider, ModelGateway
 from packages.policy import PolicyEngine
 from packages.queueing import InMemoryTaskQueue, RedisTaskQueue, TaskQueue
 from packages.rag import ReferenceRetriever
+from packages.registry import AgentRegistry, build_default_registry
 from packages.repositories import InMemoryTaskRepository, PostgresTaskRepository, TaskRepository
 from packages.runtime import AgentRuntime
 from packages.tools import ToolGateway
@@ -27,6 +28,7 @@ class Container:
     events: EventStore
     checkpoints: CheckpointStore
     artifacts: ArtifactStore
+    registry: AgentRegistry
     runtime: AgentRuntime
 
     async def initialize(self) -> None:
@@ -64,17 +66,29 @@ def build_container(settings: Settings | None = None) -> Container:
     else:
         artifacts = InMemoryArtifactStore()
 
+    registry = build_default_registry(settings.min_release_eval_score)
+
     runtime = AgentRuntime(
         repository=repository,
         events=events,
         checkpoints=checkpoints,
         artifacts=artifacts,
+        registry=registry,
         model_gateway=ModelGateway(DeterministicProvider()),
         retriever=ReferenceRetriever(),
         tools=ToolGateway(),
         policy=PolicyEngine(),
     )
-    return Container(settings, repository, queue, events, checkpoints, artifacts, runtime)
+    return Container(
+        settings,
+        repository,
+        queue,
+        events,
+        checkpoints,
+        artifacts,
+        registry,
+        runtime,
+    )
 
 
 container = build_container()
