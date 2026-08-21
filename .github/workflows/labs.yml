@@ -8,7 +8,7 @@ on:
 jobs:
   labs:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -20,31 +20,29 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install base lab dependencies
+      - name: Install base dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r labs/01-structured-output/requirements.txt
           pip install -r labs/02-tool-runtime/requirements.txt
+          pip install -r labs/11-multi-agent-artifacts/requirements.txt
 
-      - name: Lab 01 - Structured Output
-        run: python labs/01-structured-output/app.py
-
-      - name: Lab 02 - Tool Runtime
-        run: python labs/02-tool-runtime/app.py
-
-      - name: Lab 04 - Enterprise RAG
+      - name: Labs 01-02 - Contracts and Tool Runtime
         run: |
-          python labs/04-enterprise-rag/app.py --tenant tenant-a --query "供应商交付异常"
-          python labs/04-enterprise-rag/app.py --tenant tenant-b --query "供应商交付异常"
-
-      - name: Lab 05 - Agent Loop
-        run: python labs/05-agent-loop/app.py
+          python labs/01-structured-output/app.py
+          python labs/02-tool-runtime/app.py
 
       - name: Lab 03 - MCP v2 Server Tests
         run: |
           pip install -r labs/03-mcp-server/requirements.txt
           cd labs/03-mcp-server
           pytest -q
+
+      - name: Labs 04-05 - RAG and Agent Loop
+        run: |
+          python labs/04-enterprise-rag/app.py --tenant tenant-a --query "供应商交付异常"
+          python labs/04-enterprise-rag/app.py --tenant tenant-b --query "供应商交付异常"
+          python labs/05-agent-loop/app.py
 
       - name: Lab 06 - LangGraph HITL
         run: |
@@ -53,6 +51,28 @@ jobs:
 
       - name: Lab 07 - Agent Eval Gate
         run: python labs/07-agent-eval/eval.py
+
+      - name: Labs 08-12 - Gateway RAG Memory Multi-Agent Identity
+        run: |
+          python labs/08-model-gateway/app.py
+          python labs/09-agentic-rag/app.py
+          python labs/10-memory-engineering/app.py
+          python labs/11-multi-agent-artifacts/app.py
+          python labs/12-agent-identity/app.py
+
+      - name: Lab 13 - AG-UI Event Contract
+        run: |
+          pip install -r labs/13-ag-ui-console/requirements.txt
+          cd labs/13-ag-ui-console
+          pytest -q
+
+      - name: Labs 14-18 - Sandbox Security Event SRE Platform
+        run: |
+          python labs/14-sandbox-coding-agent/app.py
+          python labs/15-security-redteam/run_redteam.py
+          python labs/16-event-driven-agent/app.py
+          python labs/17-agent-sre/app.py
+          python labs/18-agent-platform/app.py
 
       - name: Reference Starter API Tests
         run: |
