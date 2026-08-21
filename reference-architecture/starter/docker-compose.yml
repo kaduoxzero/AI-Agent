@@ -1,16 +1,30 @@
+x-platform-env: &platform-env
+  DATABASE_URL: postgresql+asyncpg://agent:agent@postgres:5432/agent
+  REDIS_URL: redis://redis:6379/0
+  TASK_QUEUE_NAME: agent-platform:tasks
+  EVENT_KEY_PREFIX: agent-platform:events
+
+x-platform-depends: &platform-depends
+  postgres:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+
 services:
   api:
     build: .
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://agent:agent@postgres:5432/agent
-      REDIS_URL: redis://redis:6379/0
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    environment: *platform-env
+    depends_on: *platform-depends
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: ["python", "-m", "apps.worker.main"]
+    environment: *platform-env
+    depends_on: *platform-depends
+    restart: unless-stopped
 
   postgres:
     image: postgres:16
