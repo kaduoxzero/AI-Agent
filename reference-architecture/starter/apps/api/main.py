@@ -1,82 +1,114 @@
 from __future__ import annotations
 
-from threading import Lock
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Query, status
 
-from packages.contracts import TaskCreate, TaskRecord, TaskStatus
+from packages.contracts import (
+    ApprovalCommand,
+    ApprovalStatus,
+    TaskCreate,
+    TaskEvent,
+    TaskRecord,
+    TaskStatus,
+)
+from packages.dependencies import container
+
+
+TERMINAL = {TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED}
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    await container.initialize()
+    try:
+        yield
+    finally:
+        await container.close()
 
 
 app = FastAPI(
-    title="Reference Agent Platform Starter",
-    version="0.1.0",
+    title="Reference Agent Platform",
+    version="0.2.0",
+    lifespan=lifespan,
 )
 
 
-class InMemoryTaskRepository:
-    """教学实现。
-
-    生产阶段替换成 PostgreSQL Repository，API Handler 不应该感知具体存储。
-    """
-
-    def __init__(self) -> None:
-        self._items: dict[str, TaskRecord] = {}
-        self._lock = Lock()
-
-    def create(self, command: TaskCreate) -> TaskRecord:
-        task = TaskRecord.from_create(command)
-        with self._lock:
-            self._items[task.task_id] = task
-        return task
-
-    def get(self, task_id: str) -> TaskRecord | None:
-        with self._lock:
-            return self._items.get(task_id)
-
-    def save(self, task: TaskRecord) -> TaskRecord:
-        with self._lock:
-            self._items[task.task_id] = task
-        return task
-
-
-repo = InMemoryTaskRepository()
-
-
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+async def health() -> dict[str, object]:
+    return {
+        "status": "ok",
+        "durable_mode": container.settings.durable_mode,
+        "database": "postgres" if container.settings.database_url else "memory",
+        "queue": "redis" if container.settings.redis_url else "memory",
+    }
 
 
 @app.post("/tasks", response_model=TaskRecord, status_code=status.HTTP_202_ACCEPTED)
-def create_task(command: TaskCreate) -> TaskRecord:
-    """创建长任务，但不在 HTTP Handler 内运行 Agent。"""
-    task = repo.create(command)
-
-    # 下一阶段：在这里发布 TaskCreated 到 Queue，而不是同步执行 Agent。
+async def create_task(command: TaskCreate) -> TaskRecord:
+    task = await container.repository.create(command)
+    await container.events.publish(task.task_id, "TaskCreated", trace_id=task.trace_id)
+    await container.queue.enqueue(task.task_id)
     return task
 
 
 @app.get("/tasks/{task_id}", response_model=TaskRecord)
-def get_task(task_id: str) -> TaskRecord:
-    task = repo.get(task_id)
+async def get_task(task_id: str) -> TaskRecord:
+    task = await container.repository.get(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="task not found")
     return task
 
 
+@app.get("/tasks/{task_id}/events", response_model=list[TaskEvent])
+async def get_events(task_id: str, start: int = Query(default=0, ge=0)) -> list[TaskEvent]:
+    if await container.repository.get(task_id) is None:
+        raise HTTPException(status_code=404, detail="task not found")
+    return await container.events.list(task_id, start=start)
+
+
 @app.post("/tasks/{task_id}/cancel", response_model=TaskRecord)
-def cancel_task(task_id: str) -> TaskRecord:
-    task = repo.get(task_id)
+async def cancel_task(task_id: str) -> TaskRecord:
+    task = await container.repository.get(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="task not found")
+    if task.status in TERMINAL:
+        raise HTTPException(status_code=409, detail=f"terminal task: {task.status.value}")
 
-    if task.status in {TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED}:
-        raise HTTPException(
-            status_code=409,
-            detail=f"cannot cancel terminal task: {task.status.value}",
+    task = task.transition(TaskStatus.CANCELLING, cancel_requested=True)
+    await container.repository.save(task)
+    await container.events.publish(task_id, "CancellationRequested")
+    return task
+
+
+@app.post("/tasks/{task_id}/approval", response_model=TaskRecord)
+async def decide_approval(task_id: str, command: ApprovalCommand) -> TaskRecord:
+    task = await container.repository.get(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="task not found")
+    if task.status != TaskStatus.WAITING_APPROVAL:
+        raise HTTPException(status_code=409, detail="task is not waiting for approval")
+
+    if command.approve:
+        task = task.transition(
+            TaskStatus.PENDING,
+            approval_status=ApprovalStatus.APPROVED,
+            approval_reason=command.reason,
         )
+        await container.repository.save(task)
+        await container.events.publish(
+            task_id, "ApprovalResolved", decision="approved", actor_id=command.actor_id
+        )
+        await container.queue.enqueue(task_id)
+        return task
 
-    # 当前无 Worker，所以直接标记 CANCELLED。
-    # 接入 Worker 后应使用 CANCELLING → worker cooperative cancel → CANCELLED。
-    cancelled = task.transition(TaskStatus.CANCELLED)
-    return repo.save(cancelled)
+    task = task.transition(
+        TaskStatus.CANCELLED,
+        approval_status=ApprovalStatus.REJECTED,
+        approval_reason=command.reason,
+    )
+    await container.repository.save(task)
+    await container.events.publish(
+        task_id, "ApprovalResolved", decision="rejected", actor_id=command.actor_id
+    )
+    return task
