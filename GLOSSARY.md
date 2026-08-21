@@ -23,6 +23,11 @@
 | Memory | 记忆 | 跨步骤或跨会话可再次使用的信息 |
 | Compaction | 上下文压缩 | 将长历史压缩为继续工作所需的信息 |
 | Structured Output | 结构化输出 | 按 JSON Schema / 类型生成机器可解析结果 |
+| Artifact | 任务产物 | 报告、代码、计划、CSV 等可保存的稳定结果 |
+| Evidence | 证据 | 支撑 Claim 的可追溯事实或来源 |
+| Claim | 主张 | 需要被 Evidence 支持的结论 |
+| Data Contract | 数据契约 | 模块之间约定的字段、类型、语义和版本 |
+| Provenance | 数据血缘 / 来源 | 数据从哪里来、何时获得、经过什么处理 |
 | Tool | 工具 | Agent 可调用的外部执行能力 |
 | Function Calling | 函数调用 | 模型按函数 Schema 产生结构化调用 |
 | Side Effect | 副作用 | Tool 改变外部系统状态 |
@@ -39,7 +44,6 @@
 | Hybrid Search | 混合搜索 | Dense + Sparse Retrieval |
 | Rerank | 重排序 | 对召回文档再次精排 |
 | Chunk | 文档分块 | RAG 的检索粒度 |
-| Evidence | 证据 | Agent 决策 / 回答依赖的可追溯事实 |
 | ReAct | 推理 + 行动 | Reason → Action → Observation 循环 |
 | Plan & Solve | 先规划后执行 | Planner 生成计划，Executor 执行 |
 | ReWOO | 推理与观察解耦 | 先规划 Evidence / Tool，再集中求解 |
@@ -58,7 +62,9 @@
 | Swarm | 蜂群 / 去中心化协作 | Agent 自主选择协作对象 |
 | A2A | Agent2Agent Protocol | 独立 Agent 系统之间的互操作协议 |
 | Agent Card | Agent 能力卡 | A2A 中描述远程 Agent 能力和连接信息 |
-| Artifact | 任务产物 | 报告、文件、代码等稳定输出 |
+| AG-UI | Agent-User Interaction Protocol | Agent Runtime 与用户前端之间的事件协议 |
+| State Snapshot | 状态快照 | 某一时刻完整 State |
+| State Delta | 状态增量 | 只传输 State 相对上次发生的变化 |
 | Checkpoint | 状态快照 | 用于恢复、HITL、调试 |
 | Persistence | 持久化 | 将运行状态保存到耐久存储 |
 | HITL | Human-in-the-Loop | 关键步骤由真人审核 / 输入 |
@@ -78,6 +84,9 @@
 | Golden Dataset | 黄金测试集 | 代表真实业务的固定评估数据 |
 | LLM-as-a-Judge | 模型评审 | 用模型按 Rubric 评价输出 |
 | Trajectory | 执行轨迹 | Agent 从输入到最终结果走过的动作路径 |
+| Environment Eval | 环境评估 | 在模拟环境中验证 Agent 执行行为 |
+| Scenario Test | 场景测试 | 按预设环境、故障和期望测试 Agent |
+| Fault Injection | 故障注入 | 主动制造 timeout、500 等故障验证韧性 |
 | Regression | 回归测试 | 修改后检查旧能力是否退化 |
 | Red Team | 红队测试 | 主动使用对抗方式发现安全问题 |
 | Trace | 链路 | 一次完整 Agent Task 的执行记录 |
@@ -86,15 +95,47 @@
 | Prompt Injection | 提示注入 | 恶意输入试图改变 Agent 指令层级 |
 | Memory Poisoning | 记忆投毒 | 恶意内容进入长期 Memory 并持续影响行为 |
 | Least Privilege | 最小权限 | Agent 只拥有任务必须的能力 |
+| Agent Identity | 智能体身份 | 专门标识和授权某个 Agent 的非人身份 |
+| Workload Identity | 工作负载身份 | 服务、Pod、Job 等机器工作负载使用的身份 |
+| Delegation | 委派 | 主体把受限权限交给另一个主体代为执行 |
+| On-Behalf-Of | 代表用户 | Agent 在受控范围内代表已认证用户调用资源 |
+| Scope | 权限范围 | Token 被允许访问的动作或资源范围 |
+| Credential Broker | 凭据代理 | 按 Policy 临时签发或获取短期凭据的组件 |
 | RBAC | 基于角色权限 | Role-Based Access Control |
 | ABAC | 基于属性权限 | Attribute-Based Access Control |
 | Audit | 审计 | 记录谁代表谁执行了什么操作 |
 | Tenant Isolation | 租户隔离 | 不同客户数据 / 状态 / 缓存互不泄漏 |
 | Queue | 消息队列 | 长任务异步调度与削峰 |
 | Dead Letter | 死信 | 多次失败后单独保存待处理任务 |
+| Event-Driven | 事件驱动 | 因 Webhook、Queue、CDC、Alert 等事件启动处理 |
+| Proactive Agent | 主动型 Agent | 不依赖当前聊天请求，也能按事件或条件主动工作 |
+| CDC | 变更数据捕获 | 将数据库变化转换为事件 |
+| Replay | 重放 | 重新消费历史事件以恢复或重新计算 |
+| Debounce | 防抖 | 高频连续事件在窗口内合并触发 |
 | Backpressure | 背压 | 下游繁忙时限制上游继续产生任务 |
 | Rate Limit | 限流 | 控制请求 / Token / 并发速率 |
 | Model Routing | 模型路由 | 按任务选择不同能力 / 成本模型 |
+| Model Gateway | 模型网关 | 统一模型 Provider、路由、预算、Fallback 和 Trace |
+| Provider Adapter | 模型供应商适配器 | 将不同厂商 API 转换为内部统一接口 |
+| Model Tiering | 模型分层 | 按质量、能力、延迟、成本划分模型等级 |
+| Inference | 推理 | 使用训练完成的模型生成结果 |
+| Serving | 模型服务 | 将模型部署为可调用推理服务 |
 | Fallback | 降级 / 备用 | 主模型 / Tool 失败后切换备用方案 |
+| Circuit Breaker | 熔断器 | 依赖持续失败时暂时阻止继续调用 |
+| Degraded Mode | 降级模式 | 部分能力不可用时以受限能力继续服务 |
+| Admission Control | 准入控制 | 根据容量、优先级、预算决定是否接受任务 |
+| Load Shedding | 负载丢弃 | 过载时主动拒绝低优先级任务保护核心系统 |
+| SLI | 服务指标 | 实际测量的可靠性指标 |
+| SLO | 服务目标 | 对 SLI 设定的目标值 |
+| Error Budget | 错误预算 | SLO 允许的失败空间 |
+| Runbook | 运维手册 | 某类故障的标准诊断与恢复流程 |
+| Postmortem | 事故复盘 | 记录影响、根因、改进项与回归保护 |
+| Control Plane | 控制面 | 管理 Agent、版本、Policy、Registry 与发布 |
+| Data Plane | 执行面 | 真正执行 Agent Run、Tool、RAG、Model Call |
+| Agent Registry | Agent 注册中心 | 管理 Agent ID、版本、Owner 与能力元数据 |
+| Release Manifest | 发布清单 | 绑定 Agent、Prompt、Model、Tool、Policy 等实际版本 |
 | Canary | 金丝雀发布 | 小流量验证新版本 |
+| Promotion | 环境晋级 | 同一制品从 Dev / Staging 晋级到 Production |
+| Rollback | 回滚 | 恢复到已知稳定版本 |
+| ADR | 架构决策记录 | 记录为什么做出某个架构选择及其权衡 |
 | Eval Gate | 评估门禁 | Eval 不达标阻止部署 |
