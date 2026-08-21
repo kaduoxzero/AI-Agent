@@ -1,9 +1,27 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Generic, Protocol, TypeVar
 
 from packages.contracts import Evidence, TaskRecord
+
+
+T = TypeVar("T")
+
+
+@dataclass(frozen=True)
+class ModelUsage:
+    provider: str
+    model_route: str
+    input_tokens: int
+    output_tokens: int
+    estimated_cost_usd: float
+
+
+@dataclass(frozen=True)
+class ModelResult(Generic[T]):
+    value: T
+    usage: ModelUsage
 
 
 class ModelProvider(Protocol):
@@ -15,8 +33,8 @@ class ModelProvider(Protocol):
 class DeterministicProvider:
     """Offline provider used by the reference implementation and CI.
 
-    Replace this adapter with OpenAI/Anthropic/Gemini/DeepSeek etc. The runtime
-    depends on ModelGateway, not on a vendor SDK.
+    Replace this adapter with a real Provider. The runtime depends on
+    ModelGateway and receives usage metadata rather than importing vendor SDKs.
     """
 
     name = "deterministic-local"
@@ -48,8 +66,38 @@ class DeterministicProvider:
 class ModelGateway:
     provider: ModelProvider
 
-    async def plan(self, task: TaskRecord) -> list[str]:
-        return await self.provider.plan(task.query)
+    # Reference prices are intentionally synthetic; real adapters should map the
+    # provider's returned usage and configured price catalog into ModelUsage.
+    route_price_per_1k: dict[str, float] | None = None
 
-    async def synthesize(self, task: TaskRecord, evidence: list[Evidence]) -> dict:
-        return await self.provider.synthesize(task.query, evidence)
+    def _usage(self, task: TaskRecord, prompt_chars: int, output_chars: int) -> ModelUsage:
+        input_tokens = max(1, prompt_chars // 4)
+        output_tokens = max(1, output_chars // 4)
+        prices = self.route_price_per_1k or {"default": 0.005, "fast": 0.001, "reasoning": 0.02}
+        price = prices.get(task.model_route, prices["default"])
+        cost = (input_tokens + output_tokens) / 1000 * price
+        return ModelUsage(
+            provider=self.provider.name,
+            model_route=task.model_route,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            estimated_cost_usd=round(cost, 8),
+        )
+
+    async def plan(self, task: TaskRecord) -> ModelResult[list[str]]:
+        value = await self.provider.plan(task.query)
+        output_text = "\n".join(value)
+        return ModelResult(
+            value=value,
+            usage=self._usage(task, len(task.query), len(output_text)),
+        )
+
+    async def synthesize(
+        self, task: TaskRecord, evidence: list[Evidence]
+    ) -> ModelResult[dict]:
+        value = await self.provider.synthesize(task.query, evidence)
+        prompt_chars = len(task.query) + sum(len(item.content) for item in evidence)
+        return ModelResult(
+            value=value,
+            usage=self._usage(task, prompt_chars, len(str(value))),
+        )
