@@ -25,14 +25,21 @@ async def serve() -> None:
     logger.info("worker started durable_mode=%s", container.settings.durable_mode)
     try:
         while not stopping.is_set():
-            task_id = await container.queue.dequeue(container.settings.worker_poll_seconds)
-            if task_id is None:
+            message = await container.queue.reserve(container.settings.worker_poll_seconds)
+            if message is None:
                 continue
             try:
-                logger.info("run task=%s", task_id)
-                await container.runtime.run(task_id)
+                logger.info("run task=%s message=%s", message.task_id, message.message_id)
+                await container.runtime.run(message.task_id)
+                await container.queue.ack(message)
             except Exception:
-                logger.exception("uncaught worker error task=%s", task_id)
+                # Intentionally do not ACK. Redis Streams will expose the pending
+                # message for XAUTOCLAIM after the stale timeout.
+                logger.exception(
+                    "uncaught worker error task=%s message=%s",
+                    message.task_id,
+                    message.message_id,
+                )
     finally:
         await container.close()
         logger.info("worker stopped")
