@@ -8,7 +8,7 @@ on:
 jobs:
   labs:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -54,7 +54,8 @@ jobs:
       - name: Lab 07 - Agent Eval Gate
         run: python labs/07-agent-eval/eval.py
 
-      - name: Reference Starter import check
+      - name: Reference Starter API Tests
         run: |
           pip install -e reference-architecture/starter
-          python -c "from apps.api.main import app; print(app.title)"
+          pip install pytest httpx
+          pytest -q reference-architecture/starter/tests
