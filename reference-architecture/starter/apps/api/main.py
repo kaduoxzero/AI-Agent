@@ -8,9 +8,12 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 
 from packages.contracts import (
+    AgentDefinition,
     ApprovalCommand,
     ApprovalStatus,
     Artifact,
+    EvalResult,
+    ReleaseRoute,
     TaskCreate,
     TaskEvent,
     TaskRecord,
@@ -18,6 +21,7 @@ from packages.contracts import (
     TaskStatus,
 )
 from packages.dependencies import container
+from packages.registry import ReleaseRejected
 
 
 TERMINAL = {TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED}
@@ -43,7 +47,16 @@ async def request_identity(
     return RequestIdentity(x_tenant_id, x_user_id)
 
 
+async def platform_admin(
+    x_platform_admin: Annotated[str | None, Header(alias="X-Platform-Admin")] = None,
+) -> None:
+    # Deliberately simple training boundary. Replace with real RBAC/ABAC or IAM.
+    if x_platform_admin != "true":
+        raise HTTPException(status_code=403, detail="platform admin permission required")
+
+
 Identity = Annotated[RequestIdentity, Depends(request_identity)]
+Admin = Annotated[None, Depends(platform_admin)]
 
 
 @asynccontextmanager
@@ -57,7 +70,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Reference Agent Platform",
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -87,17 +100,32 @@ async def create_task(
     identity: Identity,
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ) -> TaskRecord:
+    agent_id = request.agent_id or container.settings.default_agent_id
+    routing_key = idempotency_key or f"{identity.tenant_id}:{identity.user_id}:{request.query}"
+    try:
+        definition = container.registry.resolve(agent_id, routing_key)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
     command = TaskCreate(
         tenant_id=identity.tenant_id,
         user_id=identity.user_id,
         query=request.query,
+        agent_id=definition.agent_id,
+        agent_version=definition.version,
         metadata=request.metadata,
         budget=request.budget,
         idempotency_key=idempotency_key,
     )
     task, created = await container.repository.create(command)
     if created:
-        await container.events.publish(task.task_id, "TaskCreated", trace_id=task.trace_id)
+        await container.events.publish(
+            task.task_id,
+            "TaskCreated",
+            trace_id=task.trace_id,
+            agent_id=task.agent_id,
+            agent_version=task.agent_version,
+        )
         await container.queue.enqueue(task.task_id)
     return task
 
@@ -160,10 +188,7 @@ async def stream_events(
     return StreamingResponse(
         generate(),
         media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
@@ -236,3 +261,39 @@ async def decide_approval(
         actor_id=identity.user_id,
     )
     return task
+
+
+# -------------------------- Control Plane --------------------------
+
+
+@app.get("/control-plane/agents", response_model=list[AgentDefinition])
+async def list_agents(_: Admin) -> list[AgentDefinition]:
+    return container.registry.list_agents()
+
+
+@app.post("/control-plane/agents", response_model=AgentDefinition)
+async def register_agent(definition: AgentDefinition, _: Admin) -> AgentDefinition:
+    return container.registry.register(definition)
+
+
+@app.post("/control-plane/evals", response_model=EvalResult)
+async def record_eval(result: EvalResult, _: Admin) -> EvalResult:
+    return container.registry.record_eval(result)
+
+
+@app.put("/control-plane/releases/{agent_id}", response_model=ReleaseRoute)
+async def update_release(agent_id: str, route: ReleaseRoute, _: Admin) -> ReleaseRoute:
+    if route.agent_id != agent_id:
+        raise HTTPException(status_code=400, detail="route agent_id does not match path")
+    try:
+        return container.registry.release(route)
+    except (ReleaseRejected, KeyError) as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.get("/control-plane/releases/{agent_id}", response_model=ReleaseRoute)
+async def get_release(agent_id: str, _: Admin) -> ReleaseRoute:
+    route = container.registry.routes.get(agent_id)
+    if route is None:
+        raise HTTPException(status_code=404, detail="release route not found")
+    return route
