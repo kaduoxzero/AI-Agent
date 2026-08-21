@@ -40,12 +40,21 @@ class TaskBudget(StrictModel):
     max_cost_usd: float = Field(default=1.0, gt=0, le=1000)
 
 
+class TaskRequest(StrictModel):
+    """Public API request. Tenant/user identity is injected by the trusted API boundary."""
+
+    query: str = Field(min_length=1, max_length=10_000)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    budget: TaskBudget = Field(default_factory=TaskBudget)
+
+
 class TaskCreate(StrictModel):
     tenant_id: str = Field(min_length=1, max_length=128)
     user_id: str = Field(min_length=1, max_length=128)
     query: str = Field(min_length=1, max_length=10_000)
     metadata: dict[str, Any] = Field(default_factory=dict)
     budget: TaskBudget = Field(default_factory=TaskBudget)
+    idempotency_key: str | None = Field(default=None, min_length=1, max_length=200)
 
 
 class Evidence(StrictModel):
@@ -104,6 +113,7 @@ class TaskRecord(StrictModel):
     query: str
     metadata: dict[str, Any]
     budget: TaskBudget
+    idempotency_key: str | None = None
     status: TaskStatus
     step_count: int = 0
     model_calls: int = 0
@@ -111,6 +121,7 @@ class TaskRecord(StrictModel):
     cancel_requested: bool = False
     approval_status: ApprovalStatus = ApprovalStatus.NOT_REQUIRED
     approval_reason: str | None = None
+    artifact_uri: str | None = None
     result: Artifact | None = None
     error: str | None = None
     created_at: datetime
@@ -127,6 +138,7 @@ class TaskRecord(StrictModel):
             query=command.query,
             metadata=command.metadata,
             budget=command.budget,
+            idempotency_key=command.idempotency_key,
             status=TaskStatus.PENDING,
             created_at=now,
             updated_at=now,
@@ -138,3 +150,30 @@ class TaskRecord(StrictModel):
 
     def transition(self, status: TaskStatus, **changes: Any) -> "TaskRecord":
         return self.patch(status=status, **changes)
+
+
+class AgentDefinition(StrictModel):
+    agent_id: str = Field(min_length=1, max_length=128)
+    version: str = Field(min_length=1, max_length=64)
+    prompt_version: str = Field(min_length=1, max_length=64)
+    model_route: str = Field(default="default", min_length=1, max_length=64)
+    allowed_tools: list[str] = Field(default_factory=list)
+    enabled: bool = True
+
+
+class ReleaseRoute(StrictModel):
+    agent_id: str
+    stable_version: str
+    canary_version: str | None = None
+    canary_percent: int = Field(default=0, ge=0, le=100)
+
+
+class EvalResult(StrictModel):
+    eval_id: str = Field(default_factory=lambda: str(uuid4()))
+    agent_id: str
+    version: str
+    suite: str
+    score: float = Field(ge=0, le=1)
+    passed: bool
+    metrics: dict[str, float] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=utcnow)
