@@ -9,10 +9,13 @@ client = TestClient(app)
 def test_health() -> None:
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["database"] == "memory"
+    assert body["queue"] == "memory"
 
 
-def test_create_get_and_cancel_task() -> None:
+def test_create_get_cancel_and_events() -> None:
     created = client.post(
         "/tasks",
         json={
@@ -24,15 +27,21 @@ def test_create_get_and_cancel_task() -> None:
     assert created.status_code == 202
     task = created.json()
     assert task["status"] == "PENDING"
+    assert task["trace_id"]
 
     task_id = task["task_id"]
     fetched = client.get(f"/tasks/{task_id}")
     assert fetched.status_code == 200
     assert fetched.json()["task_id"] == task_id
 
+    events = client.get(f"/tasks/{task_id}/events")
+    assert events.status_code == 200
+    assert events.json()[0]["event_type"] == "TaskCreated"
+
     cancelled = client.post(f"/tasks/{task_id}/cancel")
     assert cancelled.status_code == 200
-    assert cancelled.json()["status"] == "CANCELLED"
+    assert cancelled.json()["status"] == "CANCELLING"
+    assert cancelled.json()["cancel_requested"] is True
 
 
 def test_missing_task_returns_404() -> None:
