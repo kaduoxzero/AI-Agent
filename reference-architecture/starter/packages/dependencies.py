@@ -73,7 +73,6 @@ def build_container(settings: Settings | None = None) -> Container:
         events=events,
         checkpoints=checkpoints,
         artifacts=artifacts,
-        registry=registry,
         model_gateway=ModelGateway(DeterministicProvider()),
         retriever=ReferenceRetriever(),
         tools=ToolGateway(),
