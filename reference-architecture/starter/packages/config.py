@@ -4,6 +4,13 @@ import os
 from dataclasses import dataclass
 
 
+def env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.lower() in {"1", "true", "yes", "on"}
+
+
 @dataclass(frozen=True)
 class Settings:
     database_url: str | None = None
@@ -15,6 +22,8 @@ class Settings:
     identity_mode: str = "header"
     default_agent_id: str = "research-platform"
     min_release_eval_score: float = 0.8
+    auto_create_schema: bool = True
+    metrics_enabled: bool = True
 
     @property
     def durable_mode(self) -> bool:
@@ -32,4 +41,6 @@ class Settings:
             identity_mode=os.getenv("IDENTITY_MODE", "header"),
             default_agent_id=os.getenv("DEFAULT_AGENT_ID", "research-platform"),
             min_release_eval_score=float(os.getenv("MIN_RELEASE_EVAL_SCORE", "0.8")),
+            auto_create_schema=env_bool("AUTO_CREATE_SCHEMA", True),
+            metrics_enabled=env_bool("METRICS_ENABLED", True),
         )
