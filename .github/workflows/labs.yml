@@ -1,0 +1,60 @@
+name: Agent Engineering Labs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  labs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install base lab dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r labs/01-structured-output/requirements.txt
+          pip install -r labs/02-tool-runtime/requirements.txt
+
+      - name: Lab 01 - Structured Output
+        run: python labs/01-structured-output/app.py
+
+      - name: Lab 02 - Tool Runtime
+        run: python labs/02-tool-runtime/app.py
+
+      - name: Lab 04 - Enterprise RAG
+        run: |
+          python labs/04-enterprise-rag/app.py --tenant tenant-a --query "供应商交付异常"
+          python labs/04-enterprise-rag/app.py --tenant tenant-b --query "供应商交付异常"
+
+      - name: Lab 05 - Agent Loop
+        run: python labs/05-agent-loop/app.py
+
+      - name: Lab 03 - MCP v2 Server Tests
+        run: |
+          pip install -r labs/03-mcp-server/requirements.txt
+          cd labs/03-mcp-server
+          pytest -q
+
+      - name: Lab 06 - LangGraph HITL
+        run: |
+          pip install -r labs/06-langgraph-hitl/requirements.txt
+          python labs/06-langgraph-hitl/graph.py
+
+      - name: Lab 07 - Agent Eval Gate
+        run: python labs/07-agent-eval/eval.py
+
+      - name: Reference Starter import check
+        run: |
+          pip install -e reference-architecture/starter
+          python -c "from apps.api.main import app; print(app.title)"
