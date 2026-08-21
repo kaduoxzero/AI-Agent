@@ -1,194 +1,202 @@
 # Hands-on Labs：Agent 全能工程师实训体系
 
-> 这里不是概念复习，而是把知识库中的每一层能力转化为可验收的工程任务。
+> 这里不是概念复习，而是把知识库中的能力转化成可运行、可测试、可验收的工程任务。
 
-## 1. 实训原则
+## 1. 当前进度
 
-每个 Lab 都应包含四部分：
+第一批核心实验已经真正实现，不再只是规划：
 
-```text
-Concept Lab      最小理解实验
-Engineering Lab  工程实现
-Failure Lab      故障 / 边界实验
-Acceptance       验收标准
-```
+| Lab | 状态 | 核心能力 | 路径 |
+|---|---|---|---|
+| 01 Structured Output | ✅ 可运行 | Schema、Validation、Fail Closed | `01-structured-output/` |
+| 02 Tool Runtime | ✅ 可运行 | Scope、Timeout、Idempotency、Audit | `02-tool-runtime/` |
+| 03 MCP Server | ✅ 可运行 + Test | MCP Python SDK v2、Tool、Resource、Client Test | `03-mcp-server/` |
+| 04 Enterprise RAG | ✅ 可运行 | Tenant ACL、Metadata、Retrieval、Rerank、Citation | `04-enterprise-rag/` |
+| 05 Agent Loop | ✅ 可运行 | Action、Observation、Budget、Trajectory | `05-agent-loop/` |
+| 06 LangGraph HITL | ✅ 可运行 | StateGraph、Checkpoint、interrupt/resume | `06-langgraph-hitl/` |
+| 07 Agent Eval | ✅ 可运行 + Gate | Golden Dataset、Trajectory、Forbidden Tool、CI Exit Code | `07-agent-eval/` |
 
-不要只写一个 Happy Path Demo。
+仓库根目录 `.github/workflows/labs.yml` 会自动执行这些实验和 Reference Starter 测试。
 
-## 2. Lab 目录规划
+## 2. 实训原则
 
-```text
-labs/
-├─ L01-model-gateway/
-├─ L02-structured-agent/
-├─ L03-tool-runtime/
-├─ L04-mcp-server/
-├─ L05-rag-pipeline/
-├─ L06-agentic-rag/
-├─ L07-agent-memory/
-├─ L08-react-planner/
-├─ L09-langgraph-runtime/
-├─ L10-multi-agent/
-├─ L11-agent-identity/
-├─ L12-ag-ui-console/
-├─ L13-sandbox-coding-agent/
-├─ L14-eval-harness/
-├─ L15-security-redteam/
-├─ L16-event-driven-agent/
-├─ L17-agent-sre/
-└─ L18-agent-platform/
-```
-
-## 3. L01｜Model Gateway
-
-### 任务
-
-实现统一模型调用层：
+每个 Lab 最终都应包含：
 
 ```text
-Agent → ModelGateway → Provider A / Provider B
+Concept
+  ↓
+Runnable Baseline
+  ↓
+Engineering Constraints
+  ↓
+Failure / Security Case
+  ↓
+Eval
+  ↓
+Acceptance Criteria
 ```
 
-### 必须完成
+“代码能跑”只代表完成了第一步。
 
-- Provider Adapter；
-- task_type 路由；
-- fallback；
-- Token / Cost 统计；
-- Trace ID；
-- Tenant quota。
+一个生产级实验还必须回答：
 
-### Failure Lab
+```text
+失败怎么办？
+权限在哪里判断？
+如何 Retry / Resume？
+如何 Trace？
+如何限制预算？
+如何测试 Trajectory？
+如何部署和扩缩容？
+```
 
-- Provider A 429；
-- Provider A timeout；
-- Provider B 不支持 Tool Calling。
+## 3. 第一阶段推荐顺序
 
-### 验收
+### Lab 01｜Structured Output
 
-- [ ] 业务代码没有直接依赖 Provider SDK；
-- [ ] Fallback 不会把 Tool Task 路由到不支持 Tool 的模型；
-- [ ] 每次 Call 可追踪成本。
+学习 Typed Output 和边界校验。
 
-## 4. L02｜Structured Agent
+重点：
+
+- Pydantic Schema；
+- Enum / Range；
+- Extra Field Reject；
+- Fail Closed。
+
+### Lab 02｜Tool Runtime
+
+学习模型和业务执行层的边界。
+
+重点：
+
+- Tool Registry；
+- read / write；
+- scope；
+- timeout；
+- idempotency；
+- audit。
+
+### Lab 03｜MCP Server
+
+把 Tool 能力升级成标准协议服务。
+
+重点：
+
+- `MCPServer`；
+- Tool；
+- Resource；
+- MCP Client；
+- In-memory integration test。
+
+### Lab 04｜Enterprise RAG
+
+重点不是 Vector DB API，而是：
+
+```text
+Identity
+ ↓
+ACL Filter
+ ↓
+Retrieval
+ ↓
+Rerank
+ ↓
+Evidence
+ ↓
+Citation
+```
+
+### Lab 05｜Agent Loop
+
+不依赖框架实现：
+
+```text
+Model
+ ↓ Action
+Tool
+ ↓ Observation
+State
+ ↓
+Next Turn
+```
+
+并由 Runtime 强制 Budget。
+
+### Lab 06｜LangGraph HITL
+
+将人工审批做成可暂停恢复的工作流：
+
+```text
+Graph
+ ↓
+interrupt
+ ↓
+Checkpoint
+ ↓
+Human
+ ↓
+Command(resume=...)
+```
+
+### Lab 07｜Agent Eval
+
+把质量要求变成机器可执行 Gate：
+
+```text
+Golden Dataset
+ ↓
+Agent
+ ↓
+Output Assertions
++ Trajectory Assertions
++ Security Assertions
+ ↓
+PASS / FAIL
+```
+
+## 4. 第二阶段：下一批要实现的实验
+
+下面这些已经在知识库中有理论与架构章节，后续需要继续代码化。
+
+### Lab 08｜Model Gateway
 
 实现：
 
 ```text
-Prompt
-+ Structured Output
-+ State
-+ Session
+Agent → Model Gateway → Provider A / Provider B / Local Model
 ```
 
-要求 Router 返回 Typed Decision，不允许自由文本路由。
+必须覆盖：
 
-Failure Lab：模型返回非法 JSON、字段缺失、Enum 越界。
+- Capability Routing；
+- Fallback；
+- Retry；
+- Quota；
+- Token / Cost；
+- Provider 429 / Timeout。
 
-## 5. L03｜Tool Runtime
+### Lab 09｜Agentic RAG
 
-实现 Tool Registry + Executor。
+实现：
 
-Tool 分级：
+- Query Rewrite；
+- 是否检索；
+- 二次检索；
+- Retrieval Budget；
+- Evidence Sufficiency。
 
-```text
-READ_ONLY
-WRITE
-DESTRUCTIVE
-```
-
-要求：
-
-- Schema；
-- timeout；
-- retry；
-- idempotency；
-- approval hook；
-- audit event。
-
-## 6. L04｜MCP Server
-
-实现一个业务 MCP Server，至少提供：
-
-```text
-2 Tools
-1 Resource
-Authorization
-Health / Error handling
-```
-
-测试恶意参数、权限不足、Server timeout。
-
-## 7. L05｜Enterprise RAG
-
-构建：
-
-```text
-Parse → Chunk → Metadata → Embedding → Hybrid Retrieval → Rerank → Citation
-```
-
-必须加入：
-
-- tenant_id；
-- ACL filter；
-- document version；
-- citation validation。
-
-## 8. L06｜Agentic RAG
-
-Agent 自主决定：
-
-```text
-是否检索
-query rewrite
-是否二次检索
-何时停止
-```
-
-必须限制 retrieval budget。
-
-## 9. L07｜Memory
+### Lab 10｜Memory Engineering
 
 实现：
 
 - short-term；
 - long-term；
-- memory write policy；
+- write policy；
 - TTL；
-- conflict handling。
+- conflict；
+- memory poisoning protection。
 
-安全实验：恶意网页内容不能自动进入长期 Memory。
-
-## 10. L08｜ReAct / Planner
-
-比较：
-
-```text
-Single Agent Baseline
-ReAct
-Plan & Execute
-```
-
-Eval：Quality / Steps / Cost / Latency。
-
-目标不是证明复杂模式一定更好，而是学会用数据选型。
-
-## 11. L09｜LangGraph Runtime
-
-实现：
-
-```text
-State
-Node
-Conditional Edge
-Send
-Checkpoint
-interrupt / resume
-```
-
-故障实验：Worker crash 后从 Checkpoint 恢复。
-
-## 12. L10｜Multi-Agent
+### Lab 11｜Multi-Agent + Typed Artifact
 
 实现：
 
@@ -199,9 +207,9 @@ Supervisor
 └─ Reviewer
 ```
 
-Agent 间只交换 Typed Artifact。
+Agent 之间只能通过 Typed Artifact / Evidence 协作。
 
-必须限制：
+必须有：
 
 ```text
 max_handoffs
@@ -209,129 +217,150 @@ max_workers
 max_steps
 ```
 
-## 13. L11｜Agent Identity
-
-实现简化 Credential Broker：
-
-```text
-User + Agent + Tool + Resource
- ↓ Policy
-Short-lived scoped credential
-```
-
-验证 Agent B 不能继承 Agent A 未被委派的权限。
-
-## 14. L12｜AG-UI Console
-
-实现前端：
-
-```text
-Task Timeline
-Tool Calls
-State Delta
-Approval Card
-Artifact Panel
-Cancel / Resume
-```
-
-刷新页面后必须恢复状态。
-
-## 15. L13｜Sandbox Coding Agent
-
-实现隔离 Workspace：
-
-```text
-clone repo
-read/search
-patch
-shell
-test
-diff
-```
-
-限制：CPU、Memory、Network、Execution Time。
-
-## 16. L14｜Eval Harness
-
-建立 Scenario Runner：
-
-```text
-Scenario YAML
- ↓
-Fake Environment
- ↓
-Agent
- ↓
-Trajectory Assertions
-```
-
-至少 20 个回归 Scenario。
-
-## 17. L15｜Security Red Team
-
-覆盖：
-
-- direct prompt injection；
-- indirect injection；
-- tool result poisoning；
-- memory poisoning；
-- excessive agency；
-- tenant leakage；
-- unsafe handoff。
-
-Critical Case 必须全部阻止。
-
-## 18. L16｜Event-Driven Agent
+### Lab 12｜Agent Identity / Credential Broker
 
 实现：
 
 ```text
-Webhook / Cron → Event Gateway → Task Queue → Agent
+User
+ ↓ delegation
+Agent Identity
+ ↓ policy
+Short-lived Credential
+ ↓
+Tool / Resource
 ```
 
-必须有 dedup、idempotency、DLQ、replay。
+验证 Agent B 无法继承 Agent A 未委派权限。
 
-## 19. L17｜Agent SRE
+### Lab 13｜AG-UI Console
+
+前端展示：
+
+- Task Timeline；
+- Tool Call；
+- State Delta；
+- Approval Card；
+- Artifact；
+- Cancel / Resume。
+
+### Lab 14｜Sandbox Coding Agent
+
+实现：
+
+```text
+Workspace
+├─ read/search
+├─ patch
+├─ shell
+├─ tests
+└─ git diff
+```
+
+并限制 CPU、Memory、Network、Duration。
+
+### Lab 15｜Security Red Team
+
+至少覆盖：
+
+- Direct Prompt Injection；
+- Indirect Injection；
+- Tool Result Poisoning；
+- Memory Poisoning；
+- Excessive Agency；
+- Tenant Leakage；
+- Unsafe Handoff。
+
+Critical Security Cases 必须 100% 通过。
+
+### Lab 16｜Event-Driven Agent
+
+实现：
+
+```text
+Webhook / Cron
+ ↓
+Event Gateway
+ ↓
+Queue
+ ↓
+Agent Worker
+```
+
+必须支持 dedup、idempotency、DLQ、replay。
+
+### Lab 17｜Agent SRE
 
 完成：
 
 - SLI / SLO；
-- Dashboard；
 - Circuit Breaker；
 - Degraded Mode；
-- 5 次 Failure Drill；
-- 1 份 Postmortem。
+- Failure Drill；
+- Runbook；
+- Postmortem。
 
-## 20. L18｜Agent Platform
+### Lab 18｜Agent Platform
 
-将所有内容组合：
+最终组合：
 
 ```text
 Agent Registry
 Tool Registry
-Prompt Version
-Policy
+Prompt / Skill Version
 Model Gateway
-Runtime
+Policy / Identity
+Runtime Fleet
 Eval Gate
-Release
+Canary / Rollback
 ```
 
-支持两个 Agent Version 并行运行和 Canary。
+## 5. Reference Platform
 
-## 21. 最终实训规则
+完成 Lab 01~07 后，进入：
 
-完成一个 Lab 不以“代码跑通”为验收，而要同时回答：
+`../reference-architecture/starter/`
+
+Starter 已提供：
+
+- FastAPI Task API；
+- Typed Task Contract；
+- Task State Machine 基础；
+- Dockerfile；
+- PostgreSQL；
+- Redis；
+- API Tests。
+
+建议不要另起一个全新 Demo，而是持续升级这个 Starter，把各 Lab 的能力逐步接进去。
+
+## 6. 最终验收标准
+
+真正完成整套 Labs 后，应能够从空仓库独立实现：
 
 ```text
-失败怎么办？
-如何恢复？
-如何测试？
-如何 Trace？
-权限在哪里判断？
-成本怎么限制？
-如何版本化？
-生产如何扩展？
+Frontend / AG-UI
+ ↓
+Task API
+ ↓
+Queue
+ ↓
+Agent Runtime / LangGraph
+ ↓
+Model Gateway
+ ↓
+Tool Gateway / MCP
+ ↓
+RAG / Memory
+ ↓
+Multi-Agent / A2A
+ ↓
+Artifact / Evidence
+ ↓
+Policy / Identity / HITL
+ ↓
+Eval / Trace / SRE
+ ↓
+Deployment / Canary / Rollback
 ```
 
-如果回答不了，就还没有完成这个 Lab。
+并能解释每一层为什么存在、失败后如何恢复、如何测试，以及哪些能力不应该交给 LLM 决定。
