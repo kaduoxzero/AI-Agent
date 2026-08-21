@@ -8,9 +8,13 @@ from dataclasses import dataclass
 class Settings:
     database_url: str | None = None
     redis_url: str | None = None
+    artifact_dir: str | None = None
     task_queue_name: str = "agent-platform:tasks"
     event_key_prefix: str = "agent-platform:events"
     worker_poll_seconds: int = 2
+    identity_mode: str = "header"
+    default_agent_id: str = "research-platform"
+    min_release_eval_score: float = 0.8
 
     @property
     def durable_mode(self) -> bool:
@@ -21,7 +25,11 @@ class Settings:
         return cls(
             database_url=os.getenv("DATABASE_URL") or None,
             redis_url=os.getenv("REDIS_URL") or None,
+            artifact_dir=os.getenv("ARTIFACT_DIR") or None,
             task_queue_name=os.getenv("TASK_QUEUE_NAME", "agent-platform:tasks"),
             event_key_prefix=os.getenv("EVENT_KEY_PREFIX", "agent-platform:events"),
             worker_poll_seconds=int(os.getenv("WORKER_POLL_SECONDS", "2")),
+            identity_mode=os.getenv("IDENTITY_MODE", "header"),
+            default_agent_id=os.getenv("DEFAULT_AGENT_ID", "research-platform"),
+            min_release_eval_score=float(os.getenv("MIN_RELEASE_EVAL_SCORE", "0.8")),
         )
