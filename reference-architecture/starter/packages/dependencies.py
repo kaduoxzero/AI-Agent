@@ -23,6 +23,7 @@ class Container:
 
     async def initialize(self) -> None:
         await self.repository.initialize()
+        await self.queue.initialize()
 
     async def close(self) -> None:
         await self.repository.close()
