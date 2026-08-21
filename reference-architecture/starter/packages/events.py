@@ -6,6 +6,7 @@ from typing import Any, Protocol
 from redis.asyncio import Redis
 
 from packages.contracts import TaskEvent
+from packages.metrics import observe_event
 
 
 class EventStore(Protocol):
@@ -14,13 +15,19 @@ class EventStore(Protocol):
     async def close(self) -> None: ...
 
 
+def new_event(task_id: str, event_type: str, data: dict[str, Any]) -> TaskEvent:
+    event = TaskEvent(task_id=task_id, event_type=event_type, data=data)
+    observe_event(event_type)
+    return event
+
+
 class InMemoryEventStore:
     def __init__(self) -> None:
         self._items: dict[str, list[TaskEvent]] = {}
         self._lock = asyncio.Lock()
 
     async def publish(self, task_id: str, event_type: str, **data: Any) -> TaskEvent:
-        event = TaskEvent(task_id=task_id, event_type=event_type, data=data)
+        event = new_event(task_id, event_type, data)
         async with self._lock:
             self._items.setdefault(task_id, []).append(event)
         return event
@@ -42,7 +49,7 @@ class RedisEventStore:
         return f"{self.key_prefix}:{task_id}"
 
     async def publish(self, task_id: str, event_type: str, **data: Any) -> TaskEvent:
-        event = TaskEvent(task_id=task_id, event_type=event_type, data=data)
+        event = new_event(task_id, event_type, data)
         await self.redis.rpush(self._key(task_id), event.model_dump_json())
         return event
 
