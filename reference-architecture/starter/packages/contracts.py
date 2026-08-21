@@ -129,6 +129,9 @@ class TaskRecord(StrictModel):
     step_count: int = 0
     model_calls: int = 0
     tool_calls: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    estimated_cost_usd: float = 0.0
     cancel_requested: bool = False
     approval_status: ApprovalStatus = ApprovalStatus.NOT_REQUIRED
     approval_reason: str | None = None
