@@ -1,13 +1,47 @@
 ---
 name: agent-greenfield-builder
-description: Build a new Agent system from zero to a working, testable engineering baseline. Use for greenfield Agent, RAG Agent, workflow Agent, assistant, research Agent, coding Agent, or business Agent projects where requirements must be translated into architecture, contracts, implementation phases, tests, evaluation, security, and deployment boundaries.
+description: Build a new Agent system from zero to a working, testable engineering baseline. Use after requirements and key boundaries are resolved directly or through agent-guided-builder. Covers architecture, contracts, implementation phases, tests, evaluation, security, observability, runtime, and deployment boundaries.
 ---
 
 # Agent Greenfield Builder
 
 ## Objective
 
-从 0 到 1 构建一个 **可运行、可测试、可评估、可扩展** 的 Agent 工程，而不是只生成 Prompt 或 Demo。
+从 0 到 1 构建一个 **可运行、可测试、可评估、可扩展、可恢复、可治理** 的 Agent 工程，而不是只生成 Prompt 或 Demo。
+
+本 Skill 默认承接 `agent-guided-builder` 的设计结果。用户尚未明确关键边界时，应先进入 Guided Workshop；用户明确要求“直接做”时，Agent 可以采用推荐默认值，但仍必须内部完成 Boundary Canvas 和 Decision Ledger。
+
+## Stage -1 — Guided Boundary Gate
+
+开始编码前先判断以下项目是否已经明确：
+
+```text
+Problem Statement
+Goal / Out-of-Scope
+Architecture Level
+Autonomy Contract
+Knowledge Boundary
+Tool / Side-Effect Boundary
+State / Memory / Checkpoint
+Multi-Agent Decision
+Identity / Permission
+HITL Rules
+Runtime Budget
+Eval / Acceptance
+Deployment Target
+```
+
+处理方式：
+
+```text
+已明确 → 直接使用
+可从上下文推断 → 记录推断
+适合安全默认值 → 采用默认值
+关键且未决 → agent-guided-builder 引导用户选择
+用户授权直接做 → 采用推荐项并记录 Decision Ledger
+```
+
+不要为了“问完整”而重复询问已经知道的信息。
 
 ## Core Principle
 
@@ -17,12 +51,15 @@ description: Build a new Agent system from zero to a working, testable engineeri
 
 ```text
 Deterministic Code
+→ State Machine
 → Workflow
 → LLM Workflow
 → Single Agent
 → Agent + Tool / RAG / Memory
 → Multi-Agent
 ```
+
+每升级一级，都必须能说明上一层为什么不足。
 
 ## Phase 0 — Requirement Compression
 
@@ -31,11 +68,14 @@ Deterministic Code
 ```text
 Actor:
 Goal:
+Out-of-Scope:
+Trigger:
 Input:
-Output:
+Output Artifact:
 Knowledge:
 Tools:
 Actions:
+Autonomy Level:
 Risk Level:
 Latency Target:
 Cost Constraint:
@@ -71,9 +111,11 @@ Persist / Notify / Human Review
 
 - 谁启动任务；
 - 谁决定下一步；
+- 哪些步骤必须确定性执行；
 - 谁可以执行外部操作；
 - 任务何时结束；
-- 失败后如何恢复。
+- 失败后如何恢复；
+- 哪些动作需要人确认。
 
 ## Phase 2 — Choose Architecture
 
@@ -94,7 +136,14 @@ Persist / Notify / Human Review
 - 子任务可以并行；
 - 专业能力差异明显；
 - 需要独立评审或对抗；
-- 一个 Agent 的 Prompt / Tool 集已经不可维护。
+- 一个 Agent 的 Prompt / Tool 集已经不可维护；
+- 不同角色需要不同模型或独立生命周期。
+
+必须能回答：
+
+> 如果把两个 Agent 合并，具体会在哪个权限、Context、Tool、状态或职责边界上产生冲突？
+
+回答不出来时默认不拆。
 
 ## Phase 3 — Define Contracts First
 
@@ -112,6 +161,14 @@ Persist / Notify / Human Review
 
 禁止让多个模块通过自由文本长期耦合。
 
+对于 Multi-Agent，还要定义：
+
+- Handoff Contract
+- Worker Result
+- Review Result
+- Shared State Ownership
+- Failure Propagation
+
 ## Phase 4 — Context Design
 
 Context 应拆成：
@@ -127,7 +184,15 @@ Recent Messages
 Budget
 ```
 
-必须有长度上限和裁剪策略。
+必须有：
+
+- 长度上限；
+- 选择策略；
+- 不可信内容边界；
+- 压缩 / Compaction；
+- Evidence 与指令分离。
+
+不要把所有历史、RAG 结果和 Tool 输出无差别塞入上下文。
 
 ## Phase 5 — Tool Design
 
@@ -142,9 +207,20 @@ Budget
 - permission scope；
 - idempotency；
 - side effect；
-- audit fields。
+- audit fields；
+- HITL requirement。
 
-高风险 Tool 默认进入 HITL。
+Tool 按风险分类：
+
+```text
+Read-only
+Write
+Destructive
+External Communication
+Sensitive / High-impact
+```
+
+高风险 Tool 默认进入 HITL，不允许依赖 Prompt 自我约束。
 
 ## Phase 6 — RAG Decision
 
@@ -152,18 +228,26 @@ Budget
 
 ```text
 Ingestion
+→ Parse / Clean
 → Chunk
 → Metadata
-→ Embedding
-→ Index
+→ Embedding / Index
 → Retrieve
-→ Filter
+→ Permission Filter
 → Rerank
 → Evidence
 → Generate
+→ Citation
 ```
 
-必须保留 source_id / citation / tenant scope。
+必须保留：
+
+- source_id；
+- citation；
+- tenant scope；
+- source timestamp；
+- trust level；
+- retrieval trace。
 
 ## Phase 7 — State & Memory
 
@@ -174,9 +258,22 @@ Ingestion
 - Memory：跨任务长期信息；
 - Checkpoint：恢复执行所需快照。
 
+Memory 还必须定义：
+
+```text
+Write Policy
+Trust Source
+TTL
+Conflict Handling
+Deletion
+Tenant / User Scope
+```
+
 不要把完整聊天记录直接当长期 Memory。
 
 ## Phase 8 — Runtime Boundaries
+
+短同步任务和长任务使用不同运行模型。
 
 长任务不要绑定同步 HTTP 生命周期。
 
@@ -193,18 +290,43 @@ API
 → Artifact Store
 ```
 
+必须定义：
+
+```text
+Max Steps
+Max Model Calls
+Max Tool Calls
+Max Retry
+Wall-clock Timeout
+Token Budget
+Cost Budget
+Cancellation
+Resume
+```
+
 ## Phase 9 — Safety
 
 至少实现：
 
 - Tool Allowlist；
 - Tenant / User Identity；
-- Scope Permission；
+- Agent / Tool Scope Permission；
 - Prompt Injection Boundary；
 - Sensitive Action HITL；
-- Step / Tool / Model / Cost Budget；
+- Step / Tool / Model / Token / Cost Budget；
 - Cancellation；
-- Audit Event。
+- Audit Event；
+- Secret isolation；
+- Fail Closed policy。
+
+主动考虑：
+
+- Direct / Indirect Prompt Injection；
+- Tool Poisoning；
+- Memory Poisoning；
+- Cross-Tenant Data Leak；
+- Excessive Agency；
+- Credential Leakage。
 
 ## Phase 10 — Evaluation Before Release
 
@@ -234,24 +356,58 @@ Cost
 Safety Violations
 ```
 
-## Phase 11 — Implementation Order
+同时定义发布 Gate，而不是只记录分数。
+
+## Phase 11 — Observability
+
+至少能够回答：
+
+```text
+哪个 Task？
+哪个 Agent Version？
+哪个 Prompt Version？
+哪个 Model Route？
+调用了什么 Tool？
+用了哪些 Evidence？
+为什么进入 HITL？
+花了多少 Token / Cost？
+在哪里失败？
+是否从 Checkpoint 恢复？
+```
+
+建议统一：
+
+- Task ID
+- Trace ID
+- Agent Version
+- Event
+- Tool Call
+- Retrieval
+- Model Usage
+- Approval
+- Artifact
+- Error Category
+
+## Phase 12 — Implementation Order
 
 推荐严格按顺序：
 
 ```text
 M1 Typed Contracts
-M2 Minimal Workflow / Agent Loop
+M2 Minimal Happy Path
 M3 Tool Runtime
 M4 RAG（如需要）
 M5 Persistent Task State
 M6 Queue + Worker
 M7 Checkpoint / Resume
-M8 HITL
+M8 HITL / Security
 M9 Event / Streaming
 M10 Eval
 M11 Observability
 M12 Production Deployment
 ```
+
+每个 Milestone 都必须有独立验收，禁止一次性把全部模块写完再统一调试。
 
 ## Non-Negotiable Rules
 
@@ -261,12 +417,16 @@ M12 Production Deployment
 - 不允许无限循环；
 - 不允许 Tool 无 Schema；
 - 不允许生产任务只存在内存；
-- 不允许没有 Eval 就宣称“生产可用”。
+- 不允许高风险 Side Effect 没有审批或恢复策略；
+- 不允许没有 Eval 就宣称“生产可用”；
+- 不允许没有明确职责边界就拆 Multi-Agent。
 
 ## Required Outputs
 
 完成后应具备：
 
+- Agent Boundary Canvas；
+- Decision Ledger；
 - 清晰目录结构；
 - 可运行入口；
 - Typed Contract；
@@ -283,9 +443,11 @@ M12 Production Deployment
 
 1. 新环境能启动；
 2. 核心任务可端到端执行；
-3. Tool / RAG / State 行为可测试；
-4. 错误不会静默吞掉；
-5. 有边界和预算；
-6. 有至少一组回归测试；
-7. 输出可追溯；
-8. 下一步扩展不需要推翻核心契约。
+3. Agent 的 Goal / Autonomy / Tool / Permission Boundary 明确；
+4. Tool / RAG / State 行为可测试；
+5. 错误不会静默吞掉；
+6. 有明确终止条件和预算；
+7. 有至少一组回归 / Eval；
+8. 输出可追溯；
+9. 高风险动作有安全控制；
+10. 下一步扩展不需要推翻核心契约。
