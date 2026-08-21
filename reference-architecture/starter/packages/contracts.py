@@ -44,6 +44,7 @@ class TaskRequest(StrictModel):
     """Public API request. Tenant/user identity is injected by the trusted API boundary."""
 
     query: str = Field(min_length=1, max_length=10_000)
+    agent_id: str | None = Field(default=None, min_length=1, max_length=128)
     metadata: dict[str, Any] = Field(default_factory=dict)
     budget: TaskBudget = Field(default_factory=TaskBudget)
 
@@ -52,6 +53,8 @@ class TaskCreate(StrictModel):
     tenant_id: str = Field(min_length=1, max_length=128)
     user_id: str = Field(min_length=1, max_length=128)
     query: str = Field(min_length=1, max_length=10_000)
+    agent_id: str = Field(default="research-platform", min_length=1, max_length=128)
+    agent_version: str = Field(default="1.0.0", min_length=1, max_length=64)
     metadata: dict[str, Any] = Field(default_factory=dict)
     budget: TaskBudget = Field(default_factory=TaskBudget)
     idempotency_key: str | None = Field(default=None, min_length=1, max_length=200)
@@ -111,6 +114,8 @@ class TaskRecord(StrictModel):
     tenant_id: str
     user_id: str
     query: str
+    agent_id: str
+    agent_version: str
     metadata: dict[str, Any]
     budget: TaskBudget
     idempotency_key: str | None = None
@@ -136,6 +141,8 @@ class TaskRecord(StrictModel):
             tenant_id=command.tenant_id,
             user_id=command.user_id,
             query=command.query,
+            agent_id=command.agent_id,
+            agent_version=command.agent_version,
             metadata=command.metadata,
             budget=command.budget,
             idempotency_key=command.idempotency_key,
