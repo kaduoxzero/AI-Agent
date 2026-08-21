@@ -1,25 +1,36 @@
 ---
 name: agent-project-orchestrator
-description: Route Agent engineering work to the correct workflow. Use when a request may involve greenfield Agent development, modification of an existing Agent project, debugging, architecture review, RAG, Multi-Agent, evaluation, security, productionization, or performance/cost optimization and the correct execution path must be chosen before coding.
+description: Route Agent engineering work to the correct workflow and decide whether an interactive guided design session is required before coding. Use when a request may involve greenfield Agent development, modification of an existing Agent project, debugging, architecture review, RAG, Multi-Agent, evaluation, security, productionization, or performance/cost optimization.
 ---
 
 # Agent Project Orchestrator
 
 ## Objective
 
-把模糊的“帮我做一个智能体 / 帮我改这个 Agent / 这个项目有问题”转换成明确、可执行、可验收的工程任务，并选择正确的专项 Skill。
+把“帮我做一个智能体 / 帮我改这个 Agent / 带我一步步设计 / 这个项目有问题”转换成明确、可执行、可验收的工程任务，并选择正确的专项 Skill。
 
-这个 Skill 负责 **判断与编排**，不应该取代专项 Skill 的详细执行流程。
+Orchestrator 负责三件事：
 
-## When To Use
+1. 判断当前是 Greenfield、Existing Project、Bug、Architecture 还是专项工程问题；
+2. 判断是否应先进入 **Guided Workshop**；
+3. 选择 1 个主 Skill + 必要的辅助 Skill。
 
-出现以下任一情况时使用：
+它不应该自己取代专项 Skill。
 
-- 用户要求从 0 到 1 构建 Agent，但需求还没有落成工程边界；
-- 用户给出一个已有 Agent 项目，要求新增、重构、迁移或修复；
-- 用户只描述结果，没有说明是 RAG、Workflow、Single Agent 还是 Multi-Agent；
-- 同一个任务同时涉及架构、代码、RAG、Eval、安全、生产部署等多个领域；
-- 当前 Agent 不确定下一步应该读代码、查日志、画架构、写测试还是直接实现。
+## Guided Workshop Trigger
+
+出现以下任一情况，优先进入 `agent-guided-builder`：
+
+- 用户说“带我一步一步做”；
+- 用户不知道 Agent 边界怎么考虑；
+- 用户只有业务想法，没有架构决策；
+- 用户不确定 Workflow / Single Agent / Multi-Agent；
+- 用户不确定 RAG / Memory / Tool / HITL 是否需要；
+- 新项目会执行真实业务动作；
+- 已有项目准备进行大规模能力升级，但 Change Boundary 尚不明确；
+- 用户明确希望 Agent 给出选项并帮助做取舍。
+
+如果用户已经给出了完整目标、边界和技术约束，或者明确说“不要再问，直接做”，可以不进入逐项交互；但仍必须内部完成 Boundary Canvas 与 Decision Ledger。
 
 ## Non-Negotiable Rules
 
@@ -27,31 +38,37 @@ description: Route Agent engineering work to the correct workflow. Use when a re
 2. 不要因为用户说“高级”就默认使用 Multi-Agent。
 3. 已有项目在读取代码和配置前，不允许提出大规模重写方案。
 4. 不能把“能运行”当成“完成”；必须定义验收条件。
-5. 不要为了套 Skill 而扩大用户原始目标。
+5. 不要为了套 Skill 扩大用户原始目标。
 6. 优先使用已有项目的技术栈、约定、目录和依赖。
 7. 缺失信息可通过仓库、配置、测试、日志直接推断时，不反复询问用户。
-8. 只有真正阻塞实现且无法从项目中推断的信息才需要询问。
+8. 关键架构决策要暴露 Trade-off；普通实现细节不用打断用户。
+9. Guided Mode 每轮只推进一个主要决策阶段。
+10. 用户已回答的信息必须进入 Decision Ledger，不能后续重复询问。
 
 ## Routing Decision
 
-按以下顺序判断：
-
 ```text
+用户是否需要“引导式设计”？
+├─ 是 → agent-guided-builder
+│        ↓
+│        决策完成后继续路由
+└─ 否
+   ↓
 是否已有项目？
 ├─ 否 → agent-greenfield-builder
 └─ 是
    ↓
-   是“新增 / 修改 / 迁移 / 重构”吗？
+   新增 / 修改 / 迁移 / 重构？
    ├─ 是 → agent-existing-project-modifier
    └─ 否
       ↓
-      是故障或异常行为吗？
+      故障或异常行为？
       ├─ 是 → agent-debugger
       └─ 否
          ↓
-         是架构问题吗？
+         架构问题？
          ├─ 是 → agent-architecture-reviewer
-         └─ 继续按领域路由
+         └─ 按领域路由
 ```
 
 领域路由：
@@ -65,10 +82,12 @@ description: Route Agent engineering work to the correct workflow. Use when a re
 
 ## Architecture Escalation Rule
 
-只有满足上一层无法有效解决问题时，才升级复杂度：
+只有上一层无法有效解决问题时才升级复杂度：
 
 ```text
-普通函数 / Rule
+Function / Rule
+  ↓
+State Machine
   ↓
 Deterministic Workflow
   ↓
@@ -85,7 +104,40 @@ Multi-Agent
 
 - 新复杂度解决了哪个明确问题？
 - 为什么上一层做不到？
-- 新增了什么状态、权限、延迟、成本和故障面？
+- 新增了什么 State / Context / Permission？
+- 新增了什么延迟和成本？
+- 新增了什么故障面？
+- 如何测试新增复杂度？
+
+## Boundary First Rule
+
+Agent 项目开始前至少检查：
+
+```text
+Goal Boundary
+Autonomy Boundary
+Knowledge Boundary
+Tool / Side-Effect Boundary
+Permission Boundary
+State / Memory Boundary
+Multi-Agent Boundary
+Time / Cost Boundary
+Safety / HITL Boundary
+Failure / Recovery Boundary
+Eval Boundary
+```
+
+如果边界未知，不代表必须全部询问用户。
+
+处理优先级：
+
+```text
+已有信息
+→ 仓库可推断
+→ 安全默认值
+→ Agent 推荐
+→ 用户关键决策
+```
 
 ## Intake Workflow
 
@@ -95,11 +147,12 @@ Multi-Agent
 
 - Greenfield / Existing Project
 - Feature / Bug / Refactor / Migration / Performance / Security / Production
+- Guided / Direct Execution
 - 是否需要 RAG
 - 是否需要 Tools
 - 是否需要 Memory
-- 是否需要 Multi-Agent
-- 是否需要 Human Approval
+- 是否可能 Multi-Agent
+- 是否涉及高风险 Action
 
 ### 2. 识别不可变约束
 
@@ -115,9 +168,9 @@ Multi-Agent
 - 资源限制；
 - 安全要求。
 
-### 3. 定义 Done
+### 3. 建立 Done Definition
 
-任务开始前至少建立以下完成标准：
+至少覆盖：
 
 - 功能结果；
 - 代码结果；
@@ -129,48 +182,71 @@ Multi-Agent
 
 ### 4. 选择 Skill 组合
 
-一个任务最多指定：
+一个任务通常只加载：
 
 - 1 个主 Skill；
 - 1~3 个辅助 Skill。
 
-不要一次把所有 Skill 都加载进上下文。
+不要一次把所有 Skill 都放入上下文。
 
-## Standard Output Contract
+## Guided Conversation Contract
 
-Orchestrator 应生成内部执行摘要：
+如果使用 `agent-guided-builder`，每次用户交互应尽量采用：
+
+```text
+当前阶段：
+为什么要决定：
+
+A. ...
+B. ...
+C. ...
+
+推荐：B
+原因：
+Trade-off：
+Boundary Impact：
+
+请选择 A/B/C，或者直接告诉我你的约束。
+```
+
+不要一次问十几个散乱问题。
+
+## Standard Internal Summary
 
 ```text
 Task Type:
+Guidance Mode:
 Primary Skill:
 Supporting Skills:
 Current Baseline:
 Target State:
+Resolved Decisions:
+Open Decisions:
 Constraints:
-Risk Areas:
+Boundary Risks:
 Verification Required:
 ```
 
-然后直接进入专项 Skill 执行。
-
 ## Stop Conditions
 
-出现以下情况必须暂停继续扩大改动：
+出现以下情况必须停止扩大改动：
 
 - 修改开始触及原目标之外的大量模块；
-- 发现基础架构假设与实际代码完全不一致；
+- 基础架构假设与实际代码完全不一致；
 - 现有测试大面积失败且与当前改动无关；
 - 需要破坏公开 API / 数据格式 / 数据库兼容性；
-- 涉及高风险不可逆操作而没有恢复方案。
-
-此时应缩小改动、建立 Migration / Compatibility Plan，而不是继续强推。
+- 高风险不可逆操作没有恢复方案；
+- 用户选择的自治范围超过当前安全边界；
+- Multi-Agent 没有可解释的职责 / 权限 / Context 边界。
 
 ## Completion Criteria
 
-Orchestrator 完成的标志不是写出方案，而是：
+Orchestrator 完成的标志：
 
+- 已判断是否需要 Guided Workshop；
 - 已明确主执行 Skill；
 - 已识别项目现状与目标；
 - 已锁定主要约束；
+- 已定义或安排定义边界；
 - 已定义验收标准；
-- 已进入实际实现或验证流程。
+- 已进入真正的设计、实现或验证流程。
