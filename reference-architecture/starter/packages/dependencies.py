@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from packages.checkpoints import (
+    CheckpointStore,
+    InMemoryCheckpointStore,
+    RedisCheckpointStore,
+)
 from packages.config import Settings
 from packages.events import EventStore, InMemoryEventStore, RedisEventStore
 from packages.model_gateway import DeterministicProvider, ModelGateway
@@ -19,6 +24,7 @@ class Container:
     repository: TaskRepository
     queue: TaskQueue
     events: EventStore
+    checkpoints: CheckpointStore
     runtime: AgentRuntime
 
     async def initialize(self) -> None:
@@ -29,6 +35,7 @@ class Container:
         await self.repository.close()
         await self.queue.close()
         await self.events.close()
+        await self.checkpoints.close()
 
 
 def build_container(settings: Settings | None = None) -> Container:
@@ -42,19 +49,22 @@ def build_container(settings: Settings | None = None) -> Container:
     if settings.redis_url:
         queue: TaskQueue = RedisTaskQueue(settings.redis_url, settings.task_queue_name)
         events: EventStore = RedisEventStore(settings.redis_url, settings.event_key_prefix)
+        checkpoints: CheckpointStore = RedisCheckpointStore(settings.redis_url)
     else:
         queue = InMemoryTaskQueue()
         events = InMemoryEventStore()
+        checkpoints = InMemoryCheckpointStore()
 
     runtime = AgentRuntime(
         repository=repository,
         events=events,
+        checkpoints=checkpoints,
         model_gateway=ModelGateway(DeterministicProvider()),
         retriever=ReferenceRetriever(),
         tools=ToolGateway(),
         policy=PolicyEngine(),
     )
-    return Container(settings, repository, queue, events, runtime)
+    return Container(settings, repository, queue, events, checkpoints, runtime)
 
 
 container = build_container()
