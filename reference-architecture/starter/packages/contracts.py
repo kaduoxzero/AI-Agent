@@ -55,6 +55,9 @@ class TaskCreate(StrictModel):
     query: str = Field(min_length=1, max_length=10_000)
     agent_id: str = Field(default="research-platform", min_length=1, max_length=128)
     agent_version: str = Field(default="1.0.0", min_length=1, max_length=64)
+    prompt_version: str = Field(default="research-v1", min_length=1, max_length=64)
+    model_route: str = Field(default="default", min_length=1, max_length=64)
+    allowed_tools: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
     budget: TaskBudget = Field(default_factory=TaskBudget)
     idempotency_key: str | None = Field(default=None, min_length=1, max_length=200)
@@ -116,6 +119,9 @@ class TaskRecord(StrictModel):
     query: str
     agent_id: str
     agent_version: str
+    prompt_version: str
+    model_route: str
+    allowed_tools: list[str]
     metadata: dict[str, Any]
     budget: TaskBudget
     idempotency_key: str | None = None
@@ -143,6 +149,9 @@ class TaskRecord(StrictModel):
             query=command.query,
             agent_id=command.agent_id,
             agent_version=command.agent_version,
+            prompt_version=command.prompt_version,
+            model_route=command.model_route,
+            allowed_tools=command.allowed_tools,
             metadata=command.metadata,
             budget=command.budget,
             idempotency_key=command.idempotency_key,
