@@ -37,8 +37,6 @@ async def request_identity(
     x_tenant_id: Annotated[str | None, Header(alias="X-Tenant-ID")] = None,
     x_user_id: Annotated[str | None, Header(alias="X-User-ID")] = None,
 ) -> RequestIdentity:
-    # These headers model a trusted API-gateway boundary. In production they must
-    # be written by authenticated middleware/gateway, never trusted from the open Internet.
     if not x_tenant_id or not x_user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -50,7 +48,6 @@ async def request_identity(
 async def platform_admin(
     x_platform_admin: Annotated[str | None, Header(alias="X-Platform-Admin")] = None,
 ) -> None:
-    # Deliberately simple training boundary. Replace with real RBAC/ABAC or IAM.
     if x_platform_admin != "true":
         raise HTTPException(status_code=403, detail="platform admin permission required")
 
@@ -70,7 +67,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Reference Agent Platform",
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 
@@ -78,7 +75,6 @@ app = FastAPI(
 async def owned_task(task_id: str, identity: RequestIdentity) -> TaskRecord:
     task = await container.repository.get(task_id)
     if task is None or task.tenant_id != identity.tenant_id:
-        # Return 404 for cross-tenant IDs to avoid leaking object existence.
         raise HTTPException(status_code=404, detail="task not found")
     return task
 
@@ -107,12 +103,17 @@ async def create_task(
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+    # Release manifest is snapshotted into the Task. The worker does not consult a
+    # mutable Control Plane during execution, which makes retries reproducible.
     command = TaskCreate(
         tenant_id=identity.tenant_id,
         user_id=identity.user_id,
         query=request.query,
         agent_id=definition.agent_id,
         agent_version=definition.version,
+        prompt_version=definition.prompt_version,
+        model_route=definition.model_route,
+        allowed_tools=definition.allowed_tools,
         metadata=request.metadata,
         budget=request.budget,
         idempotency_key=idempotency_key,
@@ -125,6 +126,8 @@ async def create_task(
             trace_id=task.trace_id,
             agent_id=task.agent_id,
             agent_version=task.agent_version,
+            prompt_version=task.prompt_version,
+            model_route=task.model_route,
         )
         await container.queue.enqueue(task.task_id)
     return task
