@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AG-UI Event Console Lab</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    pre { background: #111; color: #eee; padding: 16px; border-radius: 8px; overflow: auto; min-height: 180px; }
+    .event { border-bottom: 1px solid #ddd; padding: 8px 0; }
+    .type { font-weight: 700; }
+    button { padding: 8px 14px; }
+  </style>
+</head>
+<body>
+  <h1>AG-UI Event Console</h1>
+  <p>这个页面只负责消费 Agent Event；Agent Runtime 和 UI State 分离。</p>
+  <button id="start">Start Run</button>
+
+  <div class="grid">
+    <section>
+      <h2>Runtime Events</h2>
+      <div id="events"></div>
+    </section>
+    <section>
+      <h2>UI State</h2>
+      <pre id="state">{}</pre>
+      <h2>Assistant Message</h2>
+      <pre id="message"></pre>
+    </section>
+  </div>
+
+<script>
+let state = {};
+let message = "";
+
+function renderState() {
+  document.getElementById("state").textContent = JSON.stringify(state, null, 2);
+  document.getElementById("message").textContent = message;
+}
+
+function applyPatch(target, ops) {
+  // 教学版只实现 replace + 顶级字段；生产请使用 RFC 6902 JSON Patch 库。
+  for (const op of ops) {
+    if (op.op === "replace" && op.path.startsWith("/")) {
+      const key = op.path.slice(1);
+      target[key] = op.value;
+    }
+  }
+}
+
+function addEvent(event) {
+  const row = document.createElement("div");
+  row.className = "event";
+  row.innerHTML = `<span class="type">${event.type}</span><br><code>${JSON.stringify(event)}</code>`;
+  document.getElementById("events").appendChild(row);
+}
+
+document.getElementById("start").onclick = () => {
+  document.getElementById("events").innerHTML = "";
+  state = {};
+  message = "";
+  renderState();
+
+  const source = new EventSource("/events");
+  source.onmessage = (raw) => {
+    const event = JSON.parse(raw.data);
+    addEvent(event);
+
+    if (event.type === "STATE_SNAPSHOT") {
+      state = structuredClone(event.snapshot);
+    }
+    if (event.type === "STATE_DELTA") {
+      applyPatch(state, event.delta);
+    }
+    if (event.type === "TEXT_MESSAGE_CONTENT") {
+      message += event.delta;
+    }
+    if (event.type === "RUN_FINISHED" || event.type === "RUN_ERROR") {
+      source.close();
+    }
+
+    renderState();
+  };
+};
+</script>
+</body>
+</html>
