@@ -10,7 +10,7 @@ from packages.contracts import (
     TaskStatus,
 )
 from packages.events import EventStore
-from packages.model_gateway import ModelGateway
+from packages.model_gateway import ModelGateway, ModelUsage
 from packages.policy import PolicyEngine
 from packages.rag import ReferenceRetriever
 from packages.repositories import TaskRepository
@@ -54,6 +54,39 @@ class AgentRuntime:
             raise BudgetExceeded("max_model_calls exceeded")
         if task.tool_calls > task.budget.max_tool_calls:
             raise BudgetExceeded("max_tool_calls exceeded")
+        if task.estimated_cost_usd > task.budget.max_cost_usd:
+            raise BudgetExceeded("max_cost_usd exceeded")
+
+    def _reserve_model_call(self, task: TaskRecord) -> None:
+        if task.model_calls + 1 > task.budget.max_model_calls:
+            raise BudgetExceeded("max_model_calls exceeded")
+
+    async def _record_model_usage(
+        self,
+        task: TaskRecord,
+        operation: str,
+        usage: ModelUsage,
+    ) -> TaskRecord:
+        task = task.patch(
+            model_calls=task.model_calls + 1,
+            input_tokens=task.input_tokens + usage.input_tokens,
+            output_tokens=task.output_tokens + usage.output_tokens,
+            estimated_cost_usd=round(
+                task.estimated_cost_usd + usage.estimated_cost_usd,
+                8,
+            ),
+        )
+        self._check_budget(task)
+        return await self._save(
+            task,
+            "ModelCompleted",
+            operation=operation,
+            provider=usage.provider,
+            model_route=usage.model_route,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
+            estimated_cost_usd=usage.estimated_cost_usd,
+        )
 
     async def _cancel_if_requested(self, task: TaskRecord) -> TaskRecord | None:
         latest = await self.repository.get(task.task_id)
@@ -126,12 +159,12 @@ class AgentRuntime:
                     prompt_version=task.prompt_version,
                     model_route=task.model_route,
                 )
-                task = task.patch(
-                    step_count=task.step_count + 1,
-                    model_calls=task.model_calls + 1,
-                )
+                task = task.patch(step_count=task.step_count + 1)
                 self._check_budget(task)
-                plan = await self.model_gateway.plan(task)
+                self._reserve_model_call(task)
+                plan_result = await self.model_gateway.plan(task)
+                task = await self._record_model_usage(task, "plan", plan_result.usage)
+                plan = plan_result.value
                 task = await self._save(task, "PlanCreated", plan=plan)
                 checkpoint = RuntimeCheckpoint(task_id=task.task_id, plan=plan)
                 await self.checkpoints.save(checkpoint)
@@ -204,20 +237,24 @@ class AgentRuntime:
                     checkpoint, "load_structured_metrics", evidence
                 )
 
-            task = task.patch(
-                step_count=task.step_count + 1,
-                model_calls=task.model_calls + 1,
-            )
+            task = task.patch(step_count=task.step_count + 1)
             self._check_budget(task)
-            content = await self.model_gateway.synthesize(task, evidence)
+            self._reserve_model_call(task)
+            synthesis_result = await self.model_gateway.synthesize(task, evidence)
+            task = await self._record_model_usage(task, "synthesize", synthesis_result.usage)
             artifact = Artifact(
                 artifact_type="analysis_report",
                 content={
-                    **content,
+                    **synthesis_result.value,
                     "agent_id": task.agent_id,
                     "agent_version": task.agent_version,
                     "prompt_version": task.prompt_version,
                     "model_route": task.model_route,
+                    "usage": {
+                        "input_tokens": task.input_tokens,
+                        "output_tokens": task.output_tokens,
+                        "estimated_cost_usd": task.estimated_cost_usd,
+                    },
                 },
                 evidence=evidence,
             )
@@ -234,6 +271,7 @@ class AgentRuntime:
                 artifact_id=artifact.artifact_id,
                 artifact_uri=artifact_uri,
                 evidence_count=len(evidence),
+                estimated_cost_usd=task.estimated_cost_usd,
             )
         except BudgetExceeded as exc:
             task = task.transition(TaskStatus.FAILED, error=str(exc))
