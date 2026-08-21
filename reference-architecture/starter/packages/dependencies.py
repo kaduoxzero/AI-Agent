@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from packages.artifacts import ArtifactStore, FileArtifactStore, InMemoryArtifactStore
 from packages.checkpoints import (
     CheckpointStore,
     InMemoryCheckpointStore,
@@ -25,6 +26,7 @@ class Container:
     queue: TaskQueue
     events: EventStore
     checkpoints: CheckpointStore
+    artifacts: ArtifactStore
     runtime: AgentRuntime
 
     async def initialize(self) -> None:
@@ -36,6 +38,7 @@ class Container:
         await self.queue.close()
         await self.events.close()
         await self.checkpoints.close()
+        await self.artifacts.close()
 
 
 def build_container(settings: Settings | None = None) -> Container:
@@ -55,16 +58,23 @@ def build_container(settings: Settings | None = None) -> Container:
         events = InMemoryEventStore()
         checkpoints = InMemoryCheckpointStore()
 
+    artifacts: ArtifactStore
+    if settings.artifact_dir:
+        artifacts = FileArtifactStore(settings.artifact_dir)
+    else:
+        artifacts = InMemoryArtifactStore()
+
     runtime = AgentRuntime(
         repository=repository,
         events=events,
         checkpoints=checkpoints,
+        artifacts=artifacts,
         model_gateway=ModelGateway(DeterministicProvider()),
         retriever=ReferenceRetriever(),
         tools=ToolGateway(),
         policy=PolicyEngine(),
     )
-    return Container(settings, repository, queue, events, checkpoints, runtime)
+    return Container(settings, repository, queue, events, checkpoints, artifacts, runtime)
 
 
 container = build_container()
