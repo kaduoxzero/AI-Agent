@@ -71,6 +71,25 @@ class TaskEvent(StrictModel):
     created_at: datetime = Field(default_factory=utcnow)
 
 
+class RuntimeCheckpoint(StrictModel):
+    task_id: str
+    plan: list[str] = Field(default_factory=list)
+    completed_actions: list[str] = Field(default_factory=list)
+    evidence: list[Evidence] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+    def mark_action(self, action: str, evidence: list[Evidence]) -> "RuntimeCheckpoint":
+        completed = list(dict.fromkeys([*self.completed_actions, action]))
+        return self.model_copy(
+            update={
+                "completed_actions": completed,
+                "evidence": evidence,
+                "updated_at": utcnow(),
+            }
+        )
+
+
 class ApprovalCommand(StrictModel):
     approve: bool
     reason: str = Field(min_length=1, max_length=1000)
