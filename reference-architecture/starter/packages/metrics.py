@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from prometheus_client import Counter, Histogram
+from prometheus_client import Counter, Gauge, Histogram
 
 
 TASKS_CREATED = Counter(
@@ -28,6 +28,11 @@ APPROVALS = Counter(
     "Human approval decisions",
     ["decision"],
 )
+RUNTIME_EVENTS = Counter(
+    "agent_runtime_events_total",
+    "Runtime events emitted by the platform",
+    ["event_type"],
+)
 TASK_DURATION = Histogram(
     "agent_task_run_duration_seconds",
     "Duration of a worker Agent run attempt",
@@ -40,3 +45,11 @@ TASK_COST = Histogram(
     ["agent_id", "agent_version"],
     buckets=(0.0001, 0.001, 0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10),
 )
+WORKER_INFLIGHT = Gauge(
+    "agent_worker_inflight_tasks",
+    "Tasks currently executing in this process",
+)
+
+
+def observe_event(event_type: str) -> None:
+    RUNTIME_EVENTS.labels(event_type=event_type).inc()
