@@ -3,6 +3,7 @@ import asyncio
 from packages.artifacts import InMemoryArtifactStore
 from packages.checkpoints import InMemoryCheckpointStore
 from packages.contracts import (
+    AgentDefinition,
     ApprovalStatus,
     Evidence,
     RuntimeCheckpoint,
@@ -13,6 +14,7 @@ from packages.events import InMemoryEventStore
 from packages.model_gateway import DeterministicProvider, ModelGateway
 from packages.policy import PolicyEngine
 from packages.rag import ReferenceRetriever
+from packages.registry import build_default_registry
 from packages.repositories import InMemoryTaskRepository
 from packages.runtime import AgentRuntime
 from packages.tools import ToolGateway
@@ -23,17 +25,19 @@ def build_runtime():
     events = InMemoryEventStore()
     checkpoints = InMemoryCheckpointStore()
     artifacts = InMemoryArtifactStore()
+    registry = build_default_registry()
     runtime = AgentRuntime(
         repository=repo,
         events=events,
         checkpoints=checkpoints,
         artifacts=artifacts,
+        registry=registry,
         model_gateway=ModelGateway(DeterministicProvider()),
         retriever=ReferenceRetriever(),
         tools=ToolGateway(),
         policy=PolicyEngine(),
     )
-    return repo, events, checkpoints, artifacts, runtime
+    return repo, events, checkpoints, artifacts, registry, runtime
 
 
 async def create_task(repo: InMemoryTaskRepository, **kwargs):
@@ -44,7 +48,7 @@ async def create_task(repo: InMemoryTaskRepository, **kwargs):
 
 def test_runtime_completes_with_typed_artifact() -> None:
     async def scenario():
-        repo, events, _, artifacts, runtime = build_runtime()
+        repo, events, _, artifacts, _, runtime = build_runtime()
         task = await create_task(
             repo,
             tenant_id="tenant-a",
@@ -58,6 +62,7 @@ def test_runtime_completes_with_typed_artifact() -> None:
         assert result.artifact_uri is not None
         assert await artifacts.get(result.artifact_uri) == result.result
         assert result.result.artifact_type == "analysis_report"
+        assert result.result.content["agent_version"] == "1.0.0"
         assert result.result.evidence
         assert all("tenant-b" not in e.source_id for e in result.result.evidence)
         event_types = [event.event_type for event in await events.list(task.task_id)]
@@ -70,7 +75,7 @@ def test_runtime_completes_with_typed_artifact() -> None:
 
 def test_high_impact_task_stops_for_approval() -> None:
     async def scenario():
-        repo, events, _, _, runtime = build_runtime()
+        repo, events, _, _, _, runtime = build_runtime()
         task = await create_task(
             repo,
             tenant_id="tenant-a",
@@ -88,7 +93,7 @@ def test_high_impact_task_stops_for_approval() -> None:
 
 def test_budget_failure_is_fail_closed() -> None:
     async def scenario():
-        repo, _, _, _, runtime = build_runtime()
+        repo, _, _, _, _, runtime = build_runtime()
         task = await create_task(
             repo,
             tenant_id="tenant-a",
@@ -111,7 +116,7 @@ def test_budget_failure_is_fail_closed() -> None:
 
 def test_runtime_resumes_from_checkpoint_without_repeating_completed_action() -> None:
     async def scenario():
-        repo, events, checkpoints, _, runtime = build_runtime()
+        repo, events, checkpoints, _, _, runtime = build_runtime()
         task = await create_task(
             repo,
             tenant_id="tenant-a",
@@ -153,7 +158,7 @@ def test_runtime_resumes_from_checkpoint_without_repeating_completed_action() ->
 
 def test_idempotency_key_returns_same_task() -> None:
     async def scenario():
-        repo, _, _, _, _ = build_runtime()
+        repo, _, _, _, _, _ = build_runtime()
         command = TaskCreate(
             tenant_id="tenant-a",
             user_id="u1",
@@ -165,5 +170,33 @@ def test_idempotency_key_returns_same_task() -> None:
         assert first_created is True
         assert second_created is False
         assert first.task_id == second.task_id
+
+    asyncio.run(scenario())
+
+
+def test_agent_version_tool_allowlist_fails_closed() -> None:
+    async def scenario():
+        repo, _, _, _, registry, runtime = build_runtime()
+        registry.register(
+            AgentDefinition(
+                agent_id="restricted",
+                version="1.0.0",
+                prompt_version="restricted-v1",
+                model_route="default",
+                allowed_tools=[],
+            )
+        )
+        task = await create_task(
+            repo,
+            tenant_id="tenant-a",
+            user_id="u1",
+            query="分析供应商风险",
+            agent_id="restricted",
+            agent_version="1.0.0",
+        )
+        result = await runtime.run(task.task_id)
+        assert result is not None
+        assert result.status == TaskStatus.FAILED
+        assert "not allowed" in (result.error or "")
 
     asyncio.run(scenario())
