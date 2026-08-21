@@ -4,6 +4,7 @@ import asyncio
 from typing import Protocol
 
 from sqlalchemy import JSON, String, UniqueConstraint, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -77,46 +78,62 @@ class TaskRow(Base):
 
 
 class PostgresTaskRepository:
-    """Compact durable repository using a typed JSON payload plus indexed columns.
-
-    A mature platform should manage this schema with Alembic migrations and can
-    normalize additional query-heavy fields without changing the domain interface.
-    """
-
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str, auto_create_schema: bool = False) -> None:
         self.engine = create_async_engine(database_url, pool_pre_ping=True)
         self.sessions: async_sessionmaker[AsyncSession] = async_sessionmaker(
             self.engine, expire_on_commit=False
         )
+        self.auto_create_schema = auto_create_schema
 
     async def initialize(self) -> None:
-        async with self.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        if self.auto_create_schema:
+            async with self.engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+
+    async def _find_idempotent(
+        self, session: AsyncSession, tenant_id: str, idempotency_key: str
+    ) -> TaskRecord | None:
+        result = await session.execute(
+            select(TaskRow).where(
+                TaskRow.tenant_id == tenant_id,
+                TaskRow.idempotency_key == idempotency_key,
+            )
+        )
+        row = result.scalar_one_or_none()
+        return TaskRecord.model_validate(row.payload) if row else None
 
     async def create(self, command: TaskCreate) -> tuple[TaskRecord, bool]:
         async with self.sessions() as session:
             if command.idempotency_key:
-                result = await session.execute(
-                    select(TaskRow).where(
-                        TaskRow.tenant_id == command.tenant_id,
-                        TaskRow.idempotency_key == command.idempotency_key,
-                    )
+                existing = await self._find_idempotent(
+                    session, command.tenant_id, command.idempotency_key
                 )
-                existing = result.scalar_one_or_none()
                 if existing:
-                    return TaskRecord.model_validate(existing.payload), False
+                    return existing, False
 
             task = TaskRecord.from_create(command)
-            row = TaskRow(
-                task_id=task.task_id,
-                tenant_id=task.tenant_id,
-                idempotency_key=task.idempotency_key,
-                status=task.status.value,
-                payload=task.model_dump(mode="json"),
+            session.add(
+                TaskRow(
+                    task_id=task.task_id,
+                    tenant_id=task.tenant_id,
+                    idempotency_key=task.idempotency_key,
+                    status=task.status.value,
+                    payload=task.model_dump(mode="json"),
+                )
             )
-            session.add(row)
-            await session.commit()
-            return task, True
+            try:
+                await session.commit()
+                return task, True
+            except IntegrityError:
+                await session.rollback()
+                if not command.idempotency_key:
+                    raise
+                existing = await self._find_idempotent(
+                    session, command.tenant_id, command.idempotency_key
+                )
+                if existing is None:
+                    raise
+                return existing, False
 
     async def get(self, task_id: str) -> TaskRecord | None:
         async with self.sessions() as session:
