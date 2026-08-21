@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from packages.artifacts import ArtifactStore
 from packages.checkpoints import CheckpointStore
 from packages.contracts import (
     ApprovalStatus,
@@ -26,6 +27,7 @@ class AgentRuntime:
         repository: TaskRepository,
         events: EventStore,
         checkpoints: CheckpointStore,
+        artifacts: ArtifactStore,
         model_gateway: ModelGateway,
         retriever: ReferenceRetriever,
         tools: ToolGateway,
@@ -34,6 +36,7 @@ class AgentRuntime:
         self.repository = repository
         self.events = events
         self.checkpoints = checkpoints
+        self.artifacts = artifacts
         self.model_gateway = model_gateway
         self.retriever = retriever
         self.tools = tools
@@ -94,11 +97,7 @@ class AgentRuntime:
                 approval_status=ApprovalStatus.PENDING,
                 approval_reason="high-impact request requires human approval",
             )
-            return await self._save(
-                task,
-                "ApprovalRequested",
-                reason=task.approval_reason,
-            )
+            return await self._save(task, "ApprovalRequested", reason=task.approval_reason)
 
         checkpoint = await self.checkpoints.get(task.task_id)
 
@@ -127,7 +126,10 @@ class AgentRuntime:
             completed = set(checkpoint.completed_actions)
             scopes = self.policy.scopes_for(task)
 
-            if "retrieve_internal_knowledge" in checkpoint.plan and "retrieve_internal_knowledge" not in completed:
+            if (
+                "retrieve_internal_knowledge" in checkpoint.plan
+                and "retrieve_internal_knowledge" not in completed
+            ):
                 task = task.patch(step_count=task.step_count + 1)
                 self._check_budget(task)
                 evidence.extend(await self.retriever.search(task.tenant_id, task.query))
@@ -140,7 +142,10 @@ class AgentRuntime:
             if cancelled is not None:
                 return cancelled
 
-            if "search_public_sources" in checkpoint.plan and "search_public_sources" not in completed:
+            if (
+                "search_public_sources" in checkpoint.plan
+                and "search_public_sources" not in completed
+            ):
                 task = task.patch(
                     step_count=task.step_count + 1,
                     tool_calls=task.tool_calls + 1,
@@ -156,7 +161,10 @@ class AgentRuntime:
             if cancelled is not None:
                 return cancelled
 
-            if "load_structured_metrics" in checkpoint.plan and "load_structured_metrics" not in completed:
+            if (
+                "load_structured_metrics" in checkpoint.plan
+                and "load_structured_metrics" not in completed
+            ):
                 task = task.patch(
                     step_count=task.step_count + 1,
                     tool_calls=task.tool_calls + 1,
@@ -186,12 +194,18 @@ class AgentRuntime:
                 content=content,
                 evidence=evidence,
             )
-            task = task.transition(TaskStatus.COMPLETED, result=artifact)
+            artifact_uri = await self.artifacts.put(task.task_id, artifact)
+            task = task.transition(
+                TaskStatus.COMPLETED,
+                artifact_uri=artifact_uri,
+                result=artifact,
+            )
             await self.checkpoints.delete(task.task_id)
             return await self._save(
                 task,
                 "RunCompleted",
                 artifact_id=artifact.artifact_id,
+                artifact_uri=artifact_uri,
                 evidence_count=len(evidence),
             )
         except BudgetExceeded as exc:
