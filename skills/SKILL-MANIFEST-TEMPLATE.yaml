@@ -1,0 +1,22 @@
+name: example-skill
+version: 1.0.0
+description: ""
+
+capabilities:
+  - capability
+
+trigger:
+  keywords: []
+
+input:
+  required: []
+
+output:
+  artifacts: []
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable
