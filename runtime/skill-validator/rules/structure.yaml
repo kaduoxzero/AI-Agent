@@ -1,0 +1,17 @@
+version: 1.0
+
+rules:
+  required_files:
+    - SKILL.md
+    - skill.yaml
+
+  required_metadata:
+    - name
+    - version
+    - description
+    - capabilities
+    - trigger
+    - risk
+
+  naming:
+    skill_directory: kebab-case
