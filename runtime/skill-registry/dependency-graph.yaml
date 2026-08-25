@@ -1,0 +1,25 @@
+# Skill Dependency Graph
+# Core skills only. Domain skills are loaded as extensions.
+
+nodes:
+  - agent-engineering-master
+  - agent-project-orchestrator
+  - agent-architecture-reviewer
+  - agent-security-reviewer
+  - agent-rag-engineer
+  - agent-evaluation-engineer
+
+edges:
+  agent-engineering-master:
+    depends_on:
+      - agent-project-orchestrator
+      - agent-security-reviewer
+
+  agent-project-orchestrator:
+    depends_on:
+      - agent-architecture-reviewer
+      - agent-evaluation-engineer
+
+  agent-rag-engineer:
+    depends_on:
+      - agent-security-reviewer
