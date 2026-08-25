@@ -22,6 +22,7 @@ Orchestrator 负责三件事：
 
 出现以下任一情况，优先进入 `agent-guided-builder`：
 
+- 需求模糊、不完整或多方案歧义（先经 `agent-grill-me` 澄清，再决定是否需要引导式架构设计）；
 - 用户说“带我一步一步做”；
 - 用户不知道 Agent 边界怎么考虑；
 - 用户只有业务想法，没有架构决策；
@@ -49,6 +50,12 @@ Orchestrator 负责三件事：
 ## Routing Decision
 
 ```text
+需求清晰且完整？
+├─ 否（模糊 / 不完整 / 多方案歧义）→ agent-grill-me
+│        ↓
+│        澄清后重新评估
+└─ 是
+   ↓
 用户是否需要“引导式设计”？
 ├─ 是 → agent-guided-builder
 │        ↓
@@ -74,6 +81,7 @@ Orchestrator 负责三件事：
 
 领域路由：
 
+- 需求澄清、边界探索、高价值决策取舍 → `agent-grill-me`
 - 知识库、检索、Embedding、Rerank、引用 → `agent-rag-engineer`
 - Supervisor、Handoff、Debate、Swarm、多个 Agent → `agent-multi-agent-designer`
 - 测试、Benchmark、Regression、稳定性 → `agent-eval-hardening`

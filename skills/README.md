@@ -92,6 +92,7 @@ skills/
 │  ├─ PROJECT-STATE-POLICY.md       项目状态策略（SSoT）
 │  └─ resources/                    Runtime v2 与命名规范参考
 ├─ agent-project-orchestrator/      任务路由与编排判断
+├─ agent-grill-me/                  需求澄清前置门（最少高价值问题 + 边界探索）
 ├─ agent-guided-builder/            引导式边界设计工作坊
 ├─ agent-greenfield-builder/        从 0 到 1 构建
 ├─ agent-existing-project-modifier/ 已有项目安全修改

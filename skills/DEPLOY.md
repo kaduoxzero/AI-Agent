@@ -35,6 +35,7 @@ https://github.com/kaduoxzero/AI-Agent
    - 不要因为更新本 Skill 集而清空整个 Skills 目录。
 10. 检查所有 SKILL.md 的 YAML Frontmatter（name / version / description）与同目录 skill.yaml 的元数据一致，相对路径有效。
 11. 检查 agent-engineering-master 是否能够发现并引用以下能力：
+   - agent-grill-me
    - agent-guided-builder
    - agent-greenfield-builder
    - agent-existing-project-modifier

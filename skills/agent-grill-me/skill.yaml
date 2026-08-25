@@ -1,0 +1,36 @@
+name: agent-grill-me
+version: 1.0.0
+category: design
+description: "Requirement clarification gate that asks the fewest high-value questions and exposes hidden boundary conditions"
+
+capabilities:
+  - requirement_clarification
+  - boundary_exploration
+  - decision_driving
+  - adaptive_questioning
+
+trigger:
+  keywords:
+    - "需求模糊"
+    - "需求不完整"
+    - "方案歧义"
+    - "边界问题"
+    - "grill"
+    - "clarify"
+    - "ambiguous requirements"
+
+input:
+  required:
+    - task_description
+
+output:
+  artifacts:
+    - decision_ledger_entries
+    - boundary_checklist
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

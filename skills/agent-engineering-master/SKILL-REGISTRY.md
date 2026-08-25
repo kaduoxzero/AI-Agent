@@ -33,6 +33,7 @@ Project B/.agent-engineering/      Project B State
 
 | Capability | Skill | Trigger Examples |
 |---|---|---|
+| Requirement Grilling | `../agent-grill-me/SKILL.md` | 需求模糊、不完整、多方案歧义、隐藏边界条件 |
 | Guided Design | `../agent-guided-builder/SKILL.md` | 目标/边界不清、需要用户参与架构决策 |
 | Task Routing | `../agent-project-orchestrator/SKILL.md` | 任务跨多个领域或初始意图模糊 |
 | Greenfield | `../agent-greenfield-builder/SKILL.md` | 新项目从 0 到 1 |
@@ -45,6 +46,24 @@ Project B/.agent-engineering/      Project B State
 | Security | `../agent-security-reviewer/SKILL.md` | Injection、权限、Identity、敏感 Tool、HITL |
 | Performance | `../agent-performance-cost-optimizer/SKILL.md` | Token、Latency、Concurrency、Cost |
 | Production | `../agent-productionizer/SKILL.md` | Queue、Worker、Checkpoint、Deploy、SRE |
+
+---
+
+## Requirement Gate
+
+需求存在歧义、不完整、多方案或隐藏边界时，**先进 `agent-grill-me` 澄清，再决定后续路由**：
+
+```text
+需求模糊 / 不完整
+    ↓
+agent-grill-me（最少高价值问题 + 边界扫描）
+    ↓
+澄清后任务属于 Agent 系统建设？
+├─ 是 → agent-guided-builder 深化架构边界
+└─ 否 → 直接实现，或移交对应专项 Skill
+```
+
+grill-me 产出的已确认决策写入当前项目 `决策记录.md`，边界结论写入 `边界画布.md`；后续 Skill 禁止重复询问这些内容。
 
 ---
 

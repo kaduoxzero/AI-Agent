@@ -16,6 +16,10 @@ skills:
     status: stable
     category: design
 
+  agent-grill-me:
+    status: stable
+    category: design
+
   agent-greenfield-builder:
     status: stable
     category: construction

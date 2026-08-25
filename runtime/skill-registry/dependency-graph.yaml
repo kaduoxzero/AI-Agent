@@ -7,6 +7,7 @@ nodes:
   core:
     - agent-engineering-master
     - agent-project-orchestrator
+    - agent-grill-me
     - agent-guided-builder
 
   builders:
@@ -27,17 +28,25 @@ edges:
   agent-engineering-master:
     routes_to:
       - agent-project-orchestrator
+      - agent-grill-me
       - agent-guided-builder
       - agent-greenfield-builder
       - agent-existing-project-modifier
 
   agent-project-orchestrator:
     routes_to:
+      - agent-grill-me
       - agent-guided-builder
       - agent-greenfield-builder
       - agent-existing-project-modifier
       - agent-debugger
       - agent-architecture-reviewer
+
+  agent-grill-me:
+    hands_off_to:
+      - agent-guided-builder
+      - agent-greenfield-builder
+      - agent-existing-project-modifier
 
   agent-guided-builder:
     hands_off_to:
