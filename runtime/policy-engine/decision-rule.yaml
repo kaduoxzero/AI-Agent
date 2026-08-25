@@ -1,0 +1,20 @@
+version: 1.0
+
+rules:
+  low_risk:
+    action: allow
+
+  medium_risk:
+    action: review
+
+  high_risk:
+    action: require_confirmation
+
+  critical:
+    action: block_or_human_approval
+
+categories:
+  database: high
+  filesystem: high
+  email: critical
+  medical_data: critical
