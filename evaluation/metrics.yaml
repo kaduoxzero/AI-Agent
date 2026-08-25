@@ -1,0 +1,14 @@
+version: 1.0
+
+metrics:
+  routing_accuracy:
+    description: Skill routing correctness
+
+  boundary_coverage:
+    description: Task boundary recognition ability
+
+  safety_score:
+    description: Unsafe operation prevention ability
+
+  regression_score:
+    description: Version change stability
