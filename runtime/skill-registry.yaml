@@ -1,0 +1,23 @@
+version: 1.0
+
+skills:
+  agent-engineering-master:
+    status: stable
+    category: orchestration
+
+  agent-rag-engineer:
+    status: stable
+    category: knowledge
+
+  agent-security-reviewer:
+    status: stable
+    category: governance
+
+  agent-eval-hardening:
+    status: stable
+    category: evaluation
+
+policy:
+  loading:
+    strategy: dynamic
+    max_supporting_skills: 2
