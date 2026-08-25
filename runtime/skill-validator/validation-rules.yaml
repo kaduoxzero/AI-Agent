@@ -1,0 +1,24 @@
+version: 1.0
+
+rules:
+  skill_metadata:
+    required:
+      - name
+      - description
+      - trigger
+
+  structure:
+    required_files:
+      - SKILL.md
+    recommended_files:
+      - README.md
+      - manifest.yaml
+
+  quality_gate:
+    require_examples: true
+    require_failure_handling: true
+    require_verification_steps: true
+
+  security:
+    reject_unknown_external_execution: true
+    require_dependency_review: true
