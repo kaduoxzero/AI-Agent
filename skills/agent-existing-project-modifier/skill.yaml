@@ -1,0 +1,27 @@
+name: agent-existing-project-modifier
+version: 1.1.0
+category: construction
+description: "Safely modifies an existing Agent project without breaking behavior"
+
+capabilities:
+  - baseline_analysis
+  - blast_radius_control
+  - migration_safety
+
+trigger:
+  keywords:
+    - "modify extend migrate refactor existing project"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

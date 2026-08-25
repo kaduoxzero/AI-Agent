@@ -14,18 +14,20 @@ skills/templates/                  # 共享，只读
 
 ## 模板用途
 
-| 模板（只读） | 实例化到项目 |
-|---|---|
-| `project-state.yaml` | `.agent-engineering/project.yaml` |
-| `agent-boundary-canvas.md` | `.agent-engineering/boundary-canvas.md` |
-| `decision-ledger.md` | `.agent-engineering/decision-ledger.md` |
-| `current-session.md` | `.agent-engineering/current-session.md` |
-| `project-intake.md` | `.agent-engineering/project-intake.md` |
-| `architecture-summary.md` | `.agent-engineering/architecture.md` |
-| `change-impact.md` | `.agent-engineering/change-impact.md` |
-| `verification-report.md` | `.agent-engineering/verification-report.md` |
+模板使用英文 ID（内部协议）；实例化到业务项目时按 `../agent-engineering-master/resources/PROJECT-DOCUMENT-NAMING.md` 使用中文文件名。
 
-模板与状态文件一一对应；仅 `agent-boundary-canvas.md`、`architecture-summary.md`、`project-state.yaml` 三个文件名与实例名不同。
+| 模板（只读，英文 ID） | 实例化到项目 |
+|---|---|
+| `project-state.yaml` | `.agent-engineering/项目状态.yaml` |
+| `agent-boundary-canvas.md` | `.agent-engineering/边界画布.md` |
+| `decision-ledger.md` | `.agent-engineering/决策记录.md` |
+| `current-session.md` | `.agent-engineering/当前会话.md` |
+| `project-intake.md` | `.agent-engineering/项目调研.md` |
+| `architecture-summary.md` | `.agent-engineering/架构设计.md` |
+| `change-impact.md` | `.agent-engineering/影响分析.md` |
+| `verification-report.md` | `.agent-engineering/验证报告.md` |
+
+内部英文 ID 与中文实例名的对应关系固定；`history/` 目录名保持英文。
 
 ## 禁止行为
 

@@ -144,23 +144,25 @@ Return Point
 
 ```text
 Boundary changed
-→ .agent-engineering/boundary-canvas.md
+→ .agent-engineering/边界画布.md
 
 Architecture decision
-→ .agent-engineering/decision-ledger.md
+→ .agent-engineering/决策记录.md
 
 Current task progress
-→ .agent-engineering/current-session.md
+→ .agent-engineering/当前会话.md
 
 Blast Radius / Migration impact
-→ .agent-engineering/change-impact.md
+→ .agent-engineering/影响分析.md
 
 Verification / Eval / Security evidence
-→ .agent-engineering/verification-report.md
+→ .agent-engineering/验证报告.md
 
 Completed task summary
 → .agent-engineering/history/
 ```
+
+实例文件中文命名的映射规则见 `resources/PROJECT-DOCUMENT-NAMING.md`。
 
 `skills/templates/` 永远不作为写入目标。
 

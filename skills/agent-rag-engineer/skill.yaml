@@ -1,0 +1,28 @@
+name: agent-rag-engineer
+version: 1.1.0
+category: knowledge
+description: "Designs and hardens RAG ingestion, retrieval, evidence and isolation"
+
+capabilities:
+  - knowledge_ingestion
+  - retrieval_quality
+  - evidence_contract
+  - tenant_isolation
+
+trigger:
+  keywords:
+    - "rag retrieval embedding rerank citation knowledge base"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

@@ -1,0 +1,27 @@
+name: agent-project-orchestrator
+version: 1.1.0
+category: orchestration
+description: "Classifies a task and routes it to the right specialist workflow"
+
+capabilities:
+  - task_classification
+  - workflow_routing
+  - guided_mode_detection
+
+trigger:
+  keywords:
+    - "route orchestrate task type unclear which skill"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

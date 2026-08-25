@@ -1,0 +1,27 @@
+name: agent-architecture-reviewer
+version: 1.1.0
+category: governance
+description: "Reviews Agent architecture for complexity, coupling and boundary defects"
+
+capabilities:
+  - architecture_review
+  - severity_classification
+  - refactor_roadmap
+
+trigger:
+  keywords:
+    - "architecture review coupling complexity unstable structure"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: medium
+
+dependencies: []
+
+status: stable

@@ -1,0 +1,27 @@
+name: agent-greenfield-builder
+version: 1.1.0
+category: construction
+description: "Builds a new Agent system from zero to a testable baseline"
+
+capabilities:
+  - zero_to_one_build
+  - milestone_planning
+  - contract_first_design
+
+trigger:
+  keywords:
+    - "new project from scratch build zero to one"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

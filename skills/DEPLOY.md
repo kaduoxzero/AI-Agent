@@ -23,7 +23,7 @@ https://github.com/kaduoxzero/AI-Agent
 2. 如果当前项目已经存在 Skills 目录或已有 Skill 约定，优先遵循现有项目规范，不要擅自创造新的非标准目录。
 3. 如果平台同时支持“项目级 Skills”和“全局 / 用户级 Skills”，默认优先安装为项目级 Skills；只有我明确要求全局安装时才安装到用户级目录。
 4. 将 AI-Agent 仓库中的完整 skills/ 能力体系部署到目标 Skills 目录，而不是只复制单个 SKILL.md。
-5. 必须保留各 Skill 的目录层级、SKILL.md、SKILL-REGISTRY.md、PROJECT-STATE-POLICY.md 和 templates/，确保 Skill 之间的相对引用关系可用。
+5. 必须保留各 Skill 的目录层级、SKILL.md、skill.yaml、SKILL-REGISTRY.md、PROJECT-STATE-POLICY.md、resources/ 和 templates/，确保 Skill 之间的相对引用关系可用。
 6. 将以下 Skill 设置为唯一推荐主入口：
    agent-engineering-master
 7. 其他 Skill 不需要我手动调用，它们作为 agent-engineering-master 的内部能力模块，由 Master Skill 在任务执行期间按需加载、组合和切换。
@@ -33,7 +33,7 @@ https://github.com/kaduoxzero/AI-Agent
    - 只更新本套 Skills 自己管理的文件；
    - 保留用户自行新增的无关文件；
    - 不要因为更新本 Skill 集而清空整个 Skills 目录。
-10. 检查所有 SKILL.md 的 YAML Frontmatter、name、version、description 和相对路径是否有效。
+10. 检查所有 SKILL.md 的 YAML Frontmatter（name / version / description）与同目录 skill.yaml 的元数据一致，相对路径有效。
 11. 检查 agent-engineering-master 是否能够发现并引用以下能力：
    - agent-guided-builder
    - agent-greenfield-builder

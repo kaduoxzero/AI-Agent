@@ -40,11 +40,14 @@ Runtime Bootstrap（Runtime + 项目状态引导）
 
 | 内容 | 唯一权威位置 |
 |---|---|
-| Skill 能力注册、动态路由、切换契约 | `agent-engineering-master/SKILL-REGISTRY.md` |
+| 机器可读注册表（status / category） | `../runtime/skill-registry.yaml` |
+| Skill 能力语义、动态路由、切换契约 | `agent-engineering-master/SKILL-REGISTRY.md` |
 | 项目状态隔离、模板只读、多项目规则 | `agent-engineering-master/PROJECT-STATE-POLICY.md` |
 | 15 类边界画布结构 | `templates/agent-boundary-canvas.md` |
 | 统一复杂度阶梯 | `agent-greenfield-builder/SKILL.md`（其他文件引用同一标准块） |
 | 部署 / 更新提示词 | `DEPLOY.md` |
+
+每个 Skill 目录包含 `SKILL.md`（执行协议）与 `skill.yaml`（机器可读 manifest，version 与 frontmatter 保持一致）。
 
 ---
 

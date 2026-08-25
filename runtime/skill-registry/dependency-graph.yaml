@@ -1,25 +1,50 @@
-# Skill Dependency Graph
-# Core skills only. Domain skills are loaded as extensions.
+# Skill Composition Graph
+# Semantics: routes_to = Master/parent skill may hand control to the target
+# during a task. Not a hard load-time dependency.
+# Core skills are always available; domain skills are loaded as extensions.
 
 nodes:
-  - agent-engineering-master
-  - agent-project-orchestrator
-  - agent-architecture-reviewer
-  - agent-security-reviewer
-  - agent-rag-engineer
-  - agent-evaluation-engineer
+  core:
+    - agent-engineering-master
+    - agent-project-orchestrator
+    - agent-guided-builder
+
+  builders:
+    - agent-greenfield-builder
+    - agent-existing-project-modifier
+
+  domain_extensions:
+    - agent-architecture-reviewer
+    - agent-debugger
+    - agent-rag-engineer
+    - agent-multi-agent-designer
+    - agent-eval-hardening
+    - agent-productionizer
+    - agent-security-reviewer
+    - agent-performance-cost-optimizer
 
 edges:
   agent-engineering-master:
-    depends_on:
+    routes_to:
       - agent-project-orchestrator
-      - agent-security-reviewer
+      - agent-guided-builder
+      - agent-greenfield-builder
+      - agent-existing-project-modifier
 
   agent-project-orchestrator:
-    depends_on:
+    routes_to:
+      - agent-guided-builder
+      - agent-greenfield-builder
+      - agent-existing-project-modifier
+      - agent-debugger
       - agent-architecture-reviewer
-      - agent-evaluation-engineer
 
-  agent-rag-engineer:
-    depends_on:
-      - agent-security-reviewer
+  agent-guided-builder:
+    hands_off_to:
+      - agent-greenfield-builder
+      - agent-existing-project-modifier
+
+constraints:
+  - every_route_target_must_exist_in_registry: true
+  - max_supporting_skills: 2
+  - domain_skills_cannot_modify_core_runtime: true

@@ -1,0 +1,27 @@
+name: agent-eval-hardening
+version: 1.1.0
+category: evaluation
+description: "Builds golden datasets, trajectory evals and release gates"
+
+capabilities:
+  - golden_dataset
+  - trajectory_eval
+  - release_gate
+
+trigger:
+  keywords:
+    - "eval regression benchmark golden dataset release gate"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: medium
+
+dependencies: []
+
+status: stable

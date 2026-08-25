@@ -1,23 +1,63 @@
-version: 1.0
+version: 2.0
+
+# Machine-readable skill registry (single source of truth for facts).
+# Semantic layer (triggers, switching contracts): skills/agent-engineering-master/SKILL-REGISTRY.md
 
 skills:
   agent-engineering-master:
     status: stable
     category: orchestration
 
+  agent-project-orchestrator:
+    status: stable
+    category: orchestration
+
+  agent-guided-builder:
+    status: stable
+    category: design
+
+  agent-greenfield-builder:
+    status: stable
+    category: construction
+
+  agent-existing-project-modifier:
+    status: stable
+    category: construction
+
+  agent-architecture-reviewer:
+    status: stable
+    category: governance
+
+  agent-debugger:
+    status: stable
+    category: diagnosis
+
   agent-rag-engineer:
     status: stable
     category: knowledge
 
-  agent-security-reviewer:
+  agent-multi-agent-designer:
     status: stable
-    category: governance
+    category: design
 
   agent-eval-hardening:
     status: stable
     category: evaluation
 
+  agent-productionizer:
+    status: stable
+    category: operations
+
+  agent-security-reviewer:
+    status: stable
+    category: governance
+
+  agent-performance-cost-optimizer:
+    status: stable
+    category: performance
+
 policy:
   loading:
     strategy: dynamic
+    primary_skill: 1
     max_supporting_skills: 2

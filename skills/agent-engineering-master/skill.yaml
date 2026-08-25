@@ -1,0 +1,28 @@
+name: agent-engineering-master
+version: 2.0.0
+category: orchestration
+description: "Master entry that bootstraps project state and orchestrates all specialist skills"
+
+capabilities:
+  - task_orchestration
+  - project_state_bootstrap
+  - dynamic_skill_routing
+  - verification_gate
+
+trigger:
+  keywords:
+    - "agent design build debug eval security optimize productionize"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

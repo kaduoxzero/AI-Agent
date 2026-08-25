@@ -1,0 +1,27 @@
+name: agent-debugger
+version: 1.1.0
+category: diagnosis
+description: "Reproduces, localizes and fixes Agent runtime failures"
+
+capabilities:
+  - failure_reproduction
+  - root_cause_localization
+  - regression_hardening
+
+trigger:
+  keywords:
+    - "bug hang loop wrong tool lose state fail resume"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

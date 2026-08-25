@@ -1,0 +1,27 @@
+name: agent-multi-agent-designer
+version: 1.1.0
+category: design
+description: "Designs Multi-Agent systems with real role boundaries"
+
+capabilities:
+  - multi_agent_boundaries
+  - coordination_patterns
+  - loop_safety
+
+trigger:
+  keywords:
+    - "multi agent supervisor handoff swarm debate voting blackboard"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

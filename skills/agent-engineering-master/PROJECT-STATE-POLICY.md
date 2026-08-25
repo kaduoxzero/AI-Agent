@@ -24,7 +24,7 @@ skills/templates/           = 共享只读模板
 - `verification-report.md`
 - `project-state.yaml`
 
-模板文件名与项目状态文件一一对应；唯一的例外是 `agent-boundary-canvas.md` → `boundary-canvas.md`、`architecture-summary.md` → `architecture.md`、`project-state.yaml` → `project.yaml`。
+模板文件名（英文 ID）与项目状态实例文件（中文）通过 `resources/PROJECT-DOCUMENT-NAMING.md` 映射；唯一的例外是 `agent-boundary-canvas.md` → `边界画布.md`、`architecture-summary.md` → `架构设计.md`、`project-state.yaml` → `项目状态.yaml`。
 
 允许：
 
@@ -45,16 +45,28 @@ Master 在每个业务项目根目录使用：
 
 ```text
 .agent-engineering/
-├─ project.yaml
-├─ boundary-canvas.md
-├─ decision-ledger.md
-├─ current-session.md
-├─ project-intake.md
-├─ architecture.md
-├─ change-impact.md
-├─ verification-report.md
+├─ 项目状态.yaml            (project.yaml)
+├─ 边界画布.md              (boundary-canvas.md)
+├─ 决策记录.md              (decision-ledger.md)
+├─ 当前会话.md              (current-session.md)
+├─ 项目调研.md              (project-intake.md)
+├─ 架构设计.md              (architecture.md)
+├─ 影响分析.md              (change-impact.md)
+├─ 验证报告.md              (verification-report.md)
 └─ history/
 ```
+
+## 3.1 命名约定
+
+Skill 内部协议、模板与注册表使用英文 ID；实例化到业务项目的状态文件使用中文文件名。
+
+完整映射的权威来源：
+
+```text
+resources/PROJECT-DOCUMENT-NAMING.md
+```
+
+本策略后续章节提到的英文名均指对应的中文实例文件。`history/` 目录名保持英文。
 
 其中：
 
@@ -204,19 +216,19 @@ Master 不得：
 
 ```text
 Boundary changed
-→ boundary-canvas.md
+→ 边界画布.md (boundary-canvas.md)
 
 Architecture decision
-→ decision-ledger.md
+→ 决策记录.md (decision-ledger.md)
 
 Current task progress
-→ current-session.md
+→ 当前会话.md (current-session.md)
 
 Existing-project blast radius
-→ change-impact.md
+→ 影响分析.md (change-impact.md)
 
 Verification / Eval / Security result
-→ verification-report.md
+→ 验证报告.md (verification-report.md)
 
 Completed task summary
 → history/

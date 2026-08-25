@@ -1,0 +1,28 @@
+name: agent-guided-builder
+version: 1.1.0
+category: design
+description: "Interactive stage-by-stage boundary and decision workshop"
+
+capabilities:
+  - interactive_boundary_design
+  - decision_ledger
+  - stage_gates
+
+trigger:
+  keywords:
+    - "step by step guide design boundary unsure choice"
+
+input:
+  required:
+    - architecture decisions
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

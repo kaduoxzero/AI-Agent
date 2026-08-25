@@ -1,0 +1,27 @@
+name: agent-performance-cost-optimizer
+version: 1.1.0
+category: performance
+description: "Reduces latency and cost without quality or safety regression"
+
+capabilities:
+  - latency_optimization
+  - token_cost_reduction
+  - capacity_planning
+
+trigger:
+  keywords:
+    - "slow expensive latency token cost concurrency capacity"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: low
+
+dependencies: []
+
+status: stable

@@ -1,0 +1,27 @@
+name: agent-productionizer
+version: 1.1.0
+category: operations
+description: "Converts Agent prototypes into production services"
+
+capabilities:
+  - durable_task_state
+  - queue_worker_runtime
+  - observability_slo
+
+trigger:
+  keywords:
+    - "production deploy queue worker checkpoint docker kubernetes"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: medium
+
+dependencies: []
+
+status: stable

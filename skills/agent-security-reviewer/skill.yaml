@@ -1,0 +1,28 @@
+name: agent-security-reviewer
+version: 1.1.0
+category: governance
+description: "Reviews and hardens prompt injection, privilege and audit boundaries"
+
+capabilities:
+  - threat_modeling
+  - least_privilege
+  - hitl_design
+  - audit
+
+trigger:
+  keywords:
+    - "security injection privilege tenant secret approval audit"
+
+input:
+  required:
+
+output:
+  artifacts:
+    - verification_report
+
+risk:
+  level: high
+
+dependencies: []
+
+status: stable
