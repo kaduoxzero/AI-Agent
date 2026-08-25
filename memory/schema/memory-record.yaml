@@ -1,0 +1,15 @@
+version: 1.0
+
+record:
+  id: unique-id
+  type: project|decision|preference|fact
+  content: text
+  source: conversation|artifact|manual
+  confidence: 0.0-1.0
+  created_at: timestamp
+  expires_at: optional
+
+rules:
+  store_only_stable_information: true
+  avoid_sensitive_data: true
+  require_source_tracking: true
