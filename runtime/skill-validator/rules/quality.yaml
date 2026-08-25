@@ -1,3 +1,5 @@
+version: 1.0
+
 rules:
   required:
     - SKILL.md
@@ -8,6 +10,7 @@ rules:
     require_capabilities: true
     require_inputs: true
     require_outputs: true
+    require_scope_definition: true
 
   safety:
     require_risk_level: true
@@ -16,3 +19,8 @@ rules:
   maintainability:
     require_version: true
     require_examples: false
+    require_evaluation: true
+
+  architecture:
+    require_single_responsibility: true
+    require_no_circular_dependency: true
