@@ -1,13 +1,26 @@
 # Agent Evaluation Framework
 
-用于评估 Agent 系统能力。
+用于验证 Agent 系统是否可靠。
 
-包含：
+## 评估维度
 
-- Golden Cases
 - Routing Accuracy
+- Output Quality
 - Boundary Coverage
 - Safety Evaluation
 - Regression Testing
+- Trajectory Evaluation
+- Cost Evaluation
+- Performance Evaluation
 
-目标：让 Agent 能力可测量、可回归。
+## 评估对象
+
+- Skill 路由结果
+- Tool 调用过程
+- Agent 执行轨迹
+- 最终输出质量
+- 安全边界遵守情况
+
+## 目标
+
+让 Agent 从不可控生成系统，升级为可测试、可度量、可持续迭代的软件系统。
