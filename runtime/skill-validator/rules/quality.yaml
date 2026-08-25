@@ -1,0 +1,18 @@
+rules:
+  required:
+    - SKILL.md
+    - skill.yaml
+    - README.md
+
+  boundary:
+    require_capabilities: true
+    require_inputs: true
+    require_outputs: true
+
+  safety:
+    require_risk_level: true
+    require_dependencies: true
+
+  maintainability:
+    require_version: true
+    require_examples: false
