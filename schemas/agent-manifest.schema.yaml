@@ -1,0 +1,26 @@
+apiVersion: agent/v1
+kind: Agent
+
+metadata:
+  name: example-agent
+  version: 1.0.0
+
+spec:
+  purpose: ""
+
+  model:
+    provider: ""
+    name: ""
+    fallback: []
+
+  skills: []
+  tools: []
+
+  memory:
+    enabled: false
+
+  evaluation:
+    enabled: true
+
+  security:
+    humanApproval: false
