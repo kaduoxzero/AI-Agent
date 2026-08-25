@@ -1,0 +1,22 @@
+# Skill Compatibility Matrix
+
+runtime:
+  version: 2.0
+
+compatibility:
+  all:
+    requires:
+      - skill_manifest
+      - validation_passed
+      - lifecycle_status_stable
+
+  domain_extension:
+    requires:
+      - core_runtime
+      - domain_boundary_declared
+
+  production:
+    requires:
+      - evaluation_passed
+      - security_review_passed
+      - rollback_strategy
