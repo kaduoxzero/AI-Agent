@@ -1,0 +1,15 @@
+version: 1.0
+
+execution_flow:
+  - analyze_task
+  - create_plan
+  - select_skills
+  - validate_dependencies
+  - execute
+  - verify
+  - generate_report
+
+constraints:
+  max_parallel_skills: 5
+  require_validation_before_output: true
+  require_confirmation_for_high_risk_actions: true
