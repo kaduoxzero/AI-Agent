@@ -1,0 +1,30 @@
+apiVersion: agent/v1
+kind: Skill
+metadata:
+  name: example-skill
+  version: 1.0.0
+  description: Example reusable agent capability
+
+spec:
+  purpose: ""
+
+  inputs:
+    - name: request
+      type: string
+
+  outputs:
+    - name: result
+      type: artifact
+
+  tools: []
+
+  permissions:
+    filesystem: false
+    network: false
+
+  evaluation:
+    datasets: []
+    metrics: []
+
+  lifecycle:
+    status: draft
