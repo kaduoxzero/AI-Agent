@@ -14,13 +14,18 @@ skills/templates/                  # 共享，只读
 
 ## 模板用途
 
-- `project-state.yaml` → 初始化 `.agent-engineering/project.yaml`
-- `agent-boundary-canvas.md` → 初始化 `.agent-engineering/boundary-canvas.md`
-- `decision-ledger.md` → 初始化 `.agent-engineering/decision-ledger.md`
-- `guided-session-state.md` → 初始化 `.agent-engineering/current-session.md`
-- `project-intake.md` → 初始化 `.agent-engineering/project-intake.md`
-- `change-impact.md` → 初始化 `.agent-engineering/change-impact.md`
-- `verification-report.md` → 初始化 `.agent-engineering/verification-report.md`
+| 模板（只读） | 实例化到项目 |
+|---|---|
+| `project-state.yaml` | `.agent-engineering/project.yaml` |
+| `agent-boundary-canvas.md` | `.agent-engineering/boundary-canvas.md` |
+| `decision-ledger.md` | `.agent-engineering/decision-ledger.md` |
+| `current-session.md` | `.agent-engineering/current-session.md` |
+| `project-intake.md` | `.agent-engineering/project-intake.md` |
+| `architecture-summary.md` | `.agent-engineering/architecture.md` |
+| `change-impact.md` | `.agent-engineering/change-impact.md` |
+| `verification-report.md` | `.agent-engineering/verification-report.md` |
+
+模板与状态文件一一对应；仅 `agent-boundary-canvas.md`、`architecture-summary.md`、`project-state.yaml` 三个文件名与实例名不同。
 
 ## 禁止行为
 

@@ -1,5 +1,6 @@
 ---
 name: agent-rag-engineer
+version: 1.1.0
 description: Design, build, review, or upgrade RAG and Agentic RAG systems for Agent projects. Use when the system needs enterprise knowledge ingestion, retrieval, metadata filtering, tenant isolation, reranking, evidence and citations, query rewriting, multi-hop retrieval, freshness, or retrieval evaluation.
 ---
 
@@ -241,6 +242,12 @@ Identity
 - 把整份文档塞进 Context；
 - 所有问题都强制检索；
 - 让 LLM 决定权限。
+
+## Report Back to Master
+
+完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回；Retrieval / Generation Eval 结果应写入 Verification Performed，检索预算与 Agentic 升级决策写入 Decision / Change。
+
+---
 
 ## Completion Criteria
 

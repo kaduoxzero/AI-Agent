@@ -17,11 +17,14 @@ skills/templates/           = 共享只读模板
 
 - `agent-boundary-canvas.md`
 - `decision-ledger.md`
-- `guided-session-state.md`
+- `current-session.md`
 - `project-intake.md`
+- `architecture-summary.md`
 - `change-impact.md`
 - `verification-report.md`
 - `project-state.yaml`
+
+模板文件名与项目状态文件一一对应；唯一的例外是 `agent-boundary-canvas.md` → `boundary-canvas.md`、`architecture-summary.md` → `architecture.md`、`project-state.yaml` → `project.yaml`。
 
 允许：
 

@@ -1,6 +1,6 @@
-# Guided Agent Design Session State
+# Agent Engineering Session State
 
-> 用于让 Agent 在多轮对话中记住当前进行到哪一步、哪些问题已解决、哪些边界还未确定。
+> 用于让 Agent 在多轮任务中记住当前进行到哪一步、哪些问题已解决、哪些边界还未确定。对应项目状态文件：`.agent-engineering/current-session.md`。
 
 ## Session
 

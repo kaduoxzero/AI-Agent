@@ -1,5 +1,6 @@
 ---
 name: agent-existing-project-modifier
+version: 1.1.0
 description: Modify, extend, migrate, or refactor an existing Agent project without breaking unrelated behavior. Use when adding features, changing models or frameworks, introducing RAG or Multi-Agent, replacing infrastructure, fixing architectural debt, or continuing a partially completed Agent codebase. For architecture-impacting changes, establish the change boundary through agent-guided-builder before implementation.
 ---
 
@@ -385,6 +386,12 @@ Rollback:
 - 新增 Memory 却不定义写入边界；
 - 用新模型输出“看起来不错”代替 Regression；
 - 用户要求一个局部修改却重新设计整个 Agent Platform。
+
+## Report Back to Master
+
+修改完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回；Required Change Report 的字段应映射到 Return Contract 对应项。Change Impact 由 Master 写入当前项目 `.agent-engineering/change-impact.md`。
+
+---
 
 ## Completion Criteria
 

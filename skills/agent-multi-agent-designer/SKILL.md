@@ -1,5 +1,6 @@
 ---
 name: agent-multi-agent-designer
+version: 1.1.0
 description: Design, review, or refactor Multi-Agent systems with clear role boundaries, supervisor or handoff control, typed artifacts, shared state, concurrency, permissions, and failure handling. Use when a project genuinely needs multiple specialized Agents, parallel expert work, delegation, debate, voting, blackboard coordination, or distributed Agent collaboration.
 ---
 
@@ -243,6 +244,12 @@ Identify overloaded responsibility
 - Debate 没有终止条件；
 - Voting 的多个 Agent 实际使用同一 Prompt / Context 导致伪独立；
 - Multi-Agent 没有 Single Agent 对照评测。
+
+## Report Back to Master
+
+完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回；每个 Agent 的 Boundary Contract、Handoff / Artifact Contract 与 Single Agent Baseline 对比结果应包含在返回信息中。
+
+---
 
 ## Completion Criteria
 

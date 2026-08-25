@@ -1,5 +1,6 @@
 ---
 name: agent-greenfield-builder
+version: 1.1.0
 description: Build a new Agent system from zero to a working, testable engineering baseline. Use after requirements and key boundaries are resolved directly or through agent-guided-builder. Covers architecture, contracts, implementation phases, tests, evaluation, security, observability, runtime, and deployment boundaries.
 ---
 
@@ -47,15 +48,15 @@ Deployment Target
 
 先确定业务闭环，再确定是否真的需要 Agent。
 
-复杂度顺序：
+复杂度顺序（统一复杂度阶梯）：
 
 ```text
 Deterministic Code
 → State Machine
-→ Workflow
+→ Deterministic Workflow
 → LLM Workflow
 → Single Agent
-→ Agent + Tool / RAG / Memory
+→ Agent + Tools / RAG / Memory
 → Multi-Agent
 ```
 
@@ -436,6 +437,12 @@ M12 Production Deployment
 - 环境配置示例；
 - README 运行方式；
 - 已知限制与下一阶段 Roadmap。
+
+## Report Back to Master
+
+阶段完成或切换 Skill 时，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回。Boundary Canvas、Decision Ledger 与架构摘要由 Master 写入当前项目 `.agent-engineering/`。
+
+---
 
 ## Completion Criteria
 

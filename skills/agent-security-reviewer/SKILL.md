@@ -1,5 +1,6 @@
 ---
 name: agent-security-reviewer
+version: 1.1.0
 description: Review and harden Agent systems against prompt injection, tool abuse, privilege escalation, cross-tenant leakage, unsafe side effects, secret exposure, untrusted retrieval content, insecure approvals, and weak audit boundaries. Use before production release, when adding tools or RAG, or after any security-sensitive architecture change.
 ---
 
@@ -231,6 +232,12 @@ result
 - Tool Permission 只靠 Prompt；
 - 审批按钮批准后允许 Agent 换参数；
 - 把完整用户数据写入公共 Trace。
+
+## Report Back to Master
+
+审查完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回；Severity 分级结果、Fail-Closed 缺口与 Security Regression Dataset 覆盖情况应写入 Verification Performed 与 New Risks。
+
+---
 
 ## Completion Criteria
 

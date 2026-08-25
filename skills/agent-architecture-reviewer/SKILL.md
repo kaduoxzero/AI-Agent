@@ -1,5 +1,6 @@
 ---
 name: agent-architecture-reviewer
+version: 1.1.0
 description: Review an Agent system architecture for unnecessary complexity, coupling, state problems, tool boundaries, RAG design, Multi-Agent misuse, reliability, observability, security, and production readiness. Use before major refactors, migrations, scaling work, or when an Agent project feels structurally unstable.
 ---
 
@@ -227,6 +228,12 @@ Security / Data Correctness
 → Performance
 → Cosmetic Structure
 ```
+
+## Report Back to Master
+
+审查完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回；Recommendation Format 中的 Severity / Problem / Evidence 应映射到 Return Contract 对应项，分阶段迁移顺序写入 Recommended Next Capability。
+
+---
 
 ## Completion Criteria
 

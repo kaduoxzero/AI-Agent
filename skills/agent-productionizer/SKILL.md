@@ -1,5 +1,6 @@
 ---
 name: agent-productionizer
+version: 1.1.0
 description: Convert an Agent demo or prototype into a production-oriented service with durable task state, queue/worker execution, checkpoint/resume, cancellation, idempotency, event streaming, observability, deployment, release governance, reliability controls, and operational runbooks.
 ---
 
@@ -279,6 +280,12 @@ Postmortem data
 - Tool 权限只写在 Prompt；
 - 只有 Logs 没有 Metrics；
 - 没有 Cancellation / Timeout / Cost Budget。
+
+## Report Back to Master
+
+完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回；Task State Machine、SLI/SLO、Failure Modes 演练与 Runbook 状态应映射到 Verification Performed 与 New Risks。
+
+---
 
 ## Completion Criteria
 

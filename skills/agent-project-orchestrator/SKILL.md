@@ -1,5 +1,6 @@
 ---
 name: agent-project-orchestrator
+version: 1.1.0
 description: Route Agent engineering work to the correct workflow and decide whether an interactive guided design session is required before coding. Use when a request may involve greenfield Agent development, modification of an existing Agent project, debugging, architecture review, RAG, Multi-Agent, evaluation, security, productionization, or performance/cost optimization.
 ---
 
@@ -82,22 +83,16 @@ Orchestrator 负责三件事：
 
 ## Architecture Escalation Rule
 
-只有上一层无法有效解决问题时才升级复杂度：
+只有上一层无法有效解决问题时才升级复杂度。统一复杂度阶梯：
 
 ```text
-Function / Rule
-  ↓
-State Machine
-  ↓
-Deterministic Workflow
-  ↓
-LLM Workflow
-  ↓
-Single Agent
-  ↓
-Agent + RAG / Tools / Memory
-  ↓
-Multi-Agent
+Deterministic Code
+→ State Machine
+→ Deterministic Workflow
+→ LLM Workflow
+→ Single Agent
+→ Agent + Tools / RAG / Memory
+→ Multi-Agent
 ```
 
 每次升级都需要回答：
@@ -111,20 +106,14 @@ Multi-Agent
 
 ## Boundary First Rule
 
-Agent 项目开始前至少检查：
+Agent 项目开始前至少检查统一 **15 类 Agent Boundary Canvas**（权威模板：`../templates/agent-boundary-canvas.md`）：
 
 ```text
-Goal Boundary
-Autonomy Boundary
-Knowledge Boundary
-Tool / Side-Effect Boundary
-Permission Boundary
-State / Memory Boundary
-Multi-Agent Boundary
-Time / Cost Boundary
-Safety / HITL Boundary
-Failure / Recovery Boundary
-Eval Boundary
+Goal / User / Input / Output / Autonomy / Knowledge /
+Tool & Capability / Data & Permission /
+State-Session-Memory-Checkpoint / Multi-Agent /
+Time & Budget / Safety & HITL / Failure /
+Evaluation / Observability
 ```
 
 如果边界未知，不代表必须全部询问用户。
@@ -238,6 +227,12 @@ Verification Required:
 - 高风险不可逆操作没有恢复方案；
 - 用户选择的自治范围超过当前安全边界；
 - Multi-Agent 没有可解释的职责 / 权限 / Context 边界。
+
+## Report Back to Master
+
+路由完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回，至少包含 Primary Skill、Supporting Skills 与 Standard Internal Summary 中的关键信息。
+
+---
 
 ## Completion Criteria
 

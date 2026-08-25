@@ -1,5 +1,6 @@
 ---
 name: agent-debugger
+version: 1.1.0
 description: Diagnose and fix Agent systems that fail, hang, loop, call the wrong tool, lose state, retrieve bad evidence, produce invalid structured output, fail to resume, or behave inconsistently. Use for runtime bugs, orchestration bugs, tool bugs, RAG bugs, state bugs, provider failures, and Agent-specific regressions.
 ---
 
@@ -204,6 +205,12 @@ Fix:
 Regression test:
 Residual risk:
 ```
+
+## Report Back to Master
+
+排查完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回；Failure Report 中的 Root cause / Fix / Regression test 应映射到 Return Contract 对应项。
+
+---
 
 ## Completion Criteria
 

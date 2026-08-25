@@ -1,5 +1,6 @@
 ---
 name: agent-guided-builder
+version: 1.1.0
 description: Guide a user step by step through designing or reshaping an Agent system. Use when the user wants to build an Agent from zero, is unsure about architecture or boundaries, wants interactive choices, or needs help deciding autonomy, tools, RAG, memory, Multi-Agent, permissions, runtime, evaluation, and production constraints before implementation.
 ---
 
@@ -114,7 +115,7 @@ Existing Project 模式禁止重新询问已经能从代码中得到的事实。
 
 # 3. Agent Boundary Canvas
 
-整个引导过程中持续维护以下 13 类边界。
+整个引导过程中持续维护统一 **15 类 Agent Boundary Canvas**（权威模板：`../templates/agent-boundary-canvas.md`）。
 
 ```text
 1. Goal Boundary          做什么 / 不做什么
@@ -123,13 +124,15 @@ Existing Project 模式禁止重新询问已经能从代码中得到的事实。
 4. Output Boundary        输出什么 Artifact / Contract
 5. Autonomy Boundary      哪些决定可由 Agent 自主完成
 6. Knowledge Boundary     可以访问哪些知识和数据
-7. Tool Boundary          可以调用哪些 Tool
-8. Side-Effect Boundary   哪些动作会改变真实世界状态
-9. Permission Boundary    User / Agent / Tool 各自权限
-10. State & Memory        什么保存、保存多久、谁可读取
-11. Time & Budget         Step / Token / Cost / Timeout / Retry
-12. Safety & HITL         哪些情况必须停下并交给人
+7. Tool / Capability Boundary   可以调用哪些 Tool、有什么副作用
+8. Data & Permission Boundary   User / Agent / Tool 各自权限与数据边界
+9. State / Session / Memory / Checkpoint   什么保存、保存多久、谁可读取
+10. Multi-Agent Boundary  是否拆分 Agent、如何协作
+11. Time / Budget Boundary   Step / Token / Cost / Timeout / Retry
+12. Safety & HITL Boundary   哪些情况必须停下并交给人
 13. Failure Boundary      失败、恢复、回滚、降级和终止
+14. Evaluation Boundary   如何评测输出、轨迹与安全
+15. Observability Boundary   生产后必须能看到什么
 ```
 
 设计完成前不要求每个边界都复杂，但每个边界都必须被明确判断为：
@@ -266,14 +269,15 @@ H. 其他
 
 Agent 必须主动挑战“Agent 假设”。
 
-按照复杂度阶梯判断：
+按照统一复杂度阶梯判断：
 
 ```text
-Function / Rule
+Deterministic Code
 → State Machine
 → Deterministic Workflow
 → LLM Workflow
 → Single Agent
+→ Agent + Tools / RAG / Memory
 → Multi-Agent
 ```
 
@@ -742,7 +746,27 @@ Agent 在设计过程中应主动使用这些问题挑战方案：
 
 ---
 
-# 10. Completion Criteria
+# 10. Report Back to Master
+
+阶段完成或切换 Skill 时，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回：
+
+```text
+Skill Used:
+Problem Addressed:
+Decision / Change:
+Boundary Impact:
+Files / Components Affected:
+Verification Performed:
+New Risks:
+Unresolved Items:
+Recommended Next Capability:
+```
+
+长期边界与决策由 Master 按 State Write Routing 写入当前项目 `.agent-engineering/boundary-canvas.md` 与 `decision-ledger.md`。
+
+---
+
+# 11. Completion Criteria
 
 Guided Builder 只有在以下条件满足后才算结束：
 

@@ -1,5 +1,6 @@
 ---
 name: agent-performance-cost-optimizer
+version: 1.1.0
 description: Optimize Agent latency, throughput, concurrency, token usage, model calls, tool calls, retrieval cost, and infrastructure cost without silently reducing quality or safety. Use when an Agent is too slow, expensive, rate-limited, over-calling models/tools, or needs capacity planning and performance budgets.
 ---
 
@@ -248,6 +249,12 @@ Safety delta
 ```
 
 任何明显质量 / 安全回退都不能仅因成本下降而接受。
+
+## Report Back to Master
+
+完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回；Performance Gate 中的 Baseline 对比数据（Quality / P95 / Token / Cost delta）应映射到 Verification Performed，容量规划结论写入 Decision / Change。
+
+---
 
 ## Completion Criteria
 

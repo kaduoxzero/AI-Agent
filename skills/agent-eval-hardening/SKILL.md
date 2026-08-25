@@ -1,5 +1,6 @@
 ---
 name: agent-eval-hardening
+version: 1.1.0
 description: Build evaluation, regression, and release gates for Agent systems. Use when an Agent works but is unstable, when prompts/models/tools/RAG are changing, before production release, after bugs, or when quality must be measured across final output, trajectory, tool calls, retrieval, safety, latency, and cost.
 ---
 
@@ -250,6 +251,12 @@ Known risk:
 - Dataset 随代码一起偷偷改到全部通过；
 - 忽略失败 Case，只看平均分；
 - 发布时没有记录 Prompt / Model / Agent Version。
+
+## Report Back to Master
+
+完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回；Release Report 的 Quality / Latency / Cost delta 与 Release decision 应映射到 Verification Performed 与 Recommended Next Capability。Eval 资产位置写入当前项目 `.agent-engineering/verification-report.md`。
+
+---
 
 ## Completion Criteria
 

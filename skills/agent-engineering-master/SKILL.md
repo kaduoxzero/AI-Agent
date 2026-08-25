@@ -1,5 +1,6 @@
 ---
 name: agent-engineering-master
+version: 2.0.0
 description: Master entry skill for end-to-end Agent engineering with Runtime orchestration.
 ---
 
@@ -29,6 +30,15 @@ Execute Skill
 Evaluation
    ↓
 State Update
+```
+
+## Bootstrap
+
+Before dispatching any specialist skill, read:
+
+```
+PROJECT-STATE-POLICY.md    project state isolation rules (SSoT)
+SKILL-REGISTRY.md          capability registry and switching contracts (SSoT)
 ```
 
 ## Responsibilities

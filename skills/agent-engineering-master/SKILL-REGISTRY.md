@@ -8,17 +8,15 @@ Master Skill 可以在同一个用户任务中按需加载、退出、重新进�
 
 ## Mandatory Bootstrap
 
-在调用任何专项 Skill 之前，Master **必须先执行项目状态引导流程**：
+在调用任何专项 Skill 之前，Master **必须先执行项目状态引导流程**。
 
-1. 读取 `PROJECT-STATE-POLICY.md`；
-2. 解析当前业务项目的 Project Root；
-3. 检查 `<project>/.agent-engineering/project.yaml`；
-4. 如果不存在，则使用 `../templates/` 中的只读模板初始化当前项目独立状态；
-5. 如果已经存在，则读取当前项目自己的 Boundary、Decision、Session、Verification；
-6. 后续所有状态更新都只写 `<project>/.agent-engineering/`；
-7. **禁止写入 `../templates/`。**
+引导流程、模板只读约束、Project Root Resolution、多项目隔离与并发写入规则，唯一权威来源：
 
-状态模型：
+```text
+PROJECT-STATE-POLICY.md
+```
+
+核心模型：
 
 ```text
 skills/templates/                  Shared + Read Only
@@ -27,9 +25,7 @@ Project A/.agent-engineering/      Project A State
 Project B/.agent-engineering/      Project B State
 ```
 
-两个项目之间不得自动共享 Decision、Boundary、Session 或 Verification。
-
-如果用户明确要求跨项目比较或迁移，可以读取其他项目状态作为输入，但不得隐式合并。
+两个项目之间不得自动共享 Decision、Boundary、Session 或 Verification。如果用户明确要求跨项目比较或迁移，可以读取其他项目状态作为输入，但不得隐式合并。
 
 ---
 
