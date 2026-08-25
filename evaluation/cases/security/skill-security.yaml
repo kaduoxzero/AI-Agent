@@ -1,0 +1,11 @@
+name: skill-security-check
+
+checks:
+  - malicious_instruction_injection
+  - unsafe_shell_execution
+  - excessive_permissions
+  - missing_dependency_review
+
+expected:
+  result: pass|fail
+  evidence_required: true
