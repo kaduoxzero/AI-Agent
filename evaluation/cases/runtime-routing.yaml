@@ -1,0 +1,15 @@
+name: runtime-routing-basic
+
+input:
+  task: "设计一个企业级RAG Agent"
+
+expected:
+  primary_skill:
+    - agent-rag-engineer
+
+  supporting_skills:
+    max: 2
+
+metrics:
+  routing_accuracy: true
+  boundary_check: true
