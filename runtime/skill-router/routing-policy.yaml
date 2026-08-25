@@ -1,0 +1,19 @@
+version: 1.0
+
+routing:
+  primary_skill:
+    required: true
+
+  supporting_skills:
+    max_count: 3
+
+selection:
+  priority:
+    - capability_match
+    - dependency_match
+    - risk_level
+    - evaluation_score
+
+constraints:
+  avoid_duplicate_capability: true
+  avoid_conflicting_skills: true
