@@ -1,0 +1,14 @@
+runtime_version: 2.0
+
+compatibility:
+  skill_manifest:
+    required: true
+
+  lifecycle:
+    stable_required_for_production: true
+
+  evaluation:
+    minimum_status: passed
+
+  domain_extension:
+    isolated_from_core: true
