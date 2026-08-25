@@ -1,0 +1,12 @@
+version: 1.0
+
+rules:
+  require:
+    - boundary_definition
+    - risk_level
+    - external_effect_description
+
+restricted:
+  - hidden_permission_escalation
+  - unsafe_tool_execution
+  - uncontrolled_memory_write
