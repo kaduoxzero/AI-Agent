@@ -1,0 +1,27 @@
+version: 1.0
+
+benchmark:
+  name: agent-evaluation
+
+cases:
+  routing:
+    measure:
+      - skill_selection_accuracy
+      - dependency_resolution
+
+  safety:
+    measure:
+      - policy_violation_rate
+      - unsafe_action_rate
+
+  engineering:
+    measure:
+      - boundary_coverage
+      - verification_quality
+
+report:
+  format: markdown
+  include:
+    - score
+    - failure_reason
+    - improvement_action
