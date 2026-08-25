@@ -1,0 +1,21 @@
+version: 1.0
+
+states:
+  - draft
+  - review
+  - stable
+  - deprecated
+  - archived
+
+rules:
+  draft:
+    require_validation: false
+  review:
+    require_validation: true
+  stable:
+    require_manifest: true
+    require_evaluation: true
+  deprecated:
+    block_new_usage: true
+  archived:
+    readonly: true
