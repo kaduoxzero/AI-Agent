@@ -21,7 +21,7 @@ User Goal
    ↓
 agent-engineering-master
    ↓
-Project State Bootstrap（读取项目状态策略与注册表）
+Runtime Bootstrap（Runtime + 项目状态引导）
    ↓
 识别当前阶段 / 风险 / 缺失决策
    ↓
@@ -82,10 +82,12 @@ Implementation + Eval + Production
 skills/
 ├─ README.md                        本文件
 ├─ DEPLOY.md                        一键部署 / 更新提示词
-├─ agent-engineering-master/        唯一推荐主入口
+├─ SKILL-MANIFEST-TEMPLATE.yaml     Skill 清单模板
+├─ agent-engineering-master/        唯一推荐主入口（Runtime 编排）
 │  ├─ SKILL.md
 │  ├─ SKILL-REGISTRY.md             能力注册表（SSoT）
-│  └─ PROJECT-STATE-POLICY.md       项目状态策略（SSoT）
+│  ├─ PROJECT-STATE-POLICY.md       项目状态策略（SSoT）
+│  └─ resources/                    Runtime v2 与命名规范参考
 ├─ agent-project-orchestrator/      任务路由与编排判断
 ├─ agent-guided-builder/            引导式边界设计工作坊
 ├─ agent-greenfield-builder/        从 0 到 1 构建
