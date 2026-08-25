@@ -1,0 +1,18 @@
+tools:
+  database:
+    risk: high
+    require_confirmation: true
+
+  filesystem:
+    risk: high
+    require_confirmation: true
+
+  browser:
+    risk: medium
+
+  email:
+    risk: critical
+    require_confirmation: true
+
+policy:
+  external_side_effects_require_review: true
