@@ -1,29 +1,44 @@
 # Skill Development Standard
 
-Every Skill should provide:
+## Skill Package
 
-- SKILL.md
-- manifest.yaml
+Every skill must provide:
+
+- `SKILL.md` — execution protocol; frontmatter carries name / version / description
+- `skill.yaml` — machine-readable manifest (canonical template: `skills/SKILL-MANIFEST-TEMPLATE.yaml`)
+
+Recommended:
+
 - README.md
-- examples
-- tests
-- resources
+- examples/
+- tests/
+- resources/
 
-Manifest should describe:
+## Manifest
+
+`skill.yaml` describes:
 
 - name
 - version
+- category
 - capabilities
 - triggers
 - inputs
 - outputs
 - dependencies
 - risk level
-- evaluation rules
-- compatibility
+- status
 
-Skill lifecycle:
+The manifest `version` must equal the SKILL.md frontmatter `version`.
+
+## Lifecycle
 
 Draft -> Review -> Stable -> Deprecated -> Archived
 
-Core Skills are industry independent. Domain Skills provide optional extensions.
+## Layering
+
+Core Skills are industry independent. Domain Skills provide optional extensions and must not modify core runtime files.
+
+## Validation
+
+`scripts/validate_skills.py` enforces structure, metadata consistency, registry coverage and reference integrity. CI runs it on every change under `skills/`, `runtime/` or `scripts/`.

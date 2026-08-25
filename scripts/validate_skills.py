@@ -19,8 +19,11 @@ Checks:
 5. runtime/skill-registry.yaml covers all skills; status/category match
    manifests; supporting-skill limits agree across runtime configs (= 2).
 6. dependency-graph route targets exist.
-7. Backtick-quoted file references inside skills/*.md resolve to real files.
+7. File references (backticks + markdown links) resolve across skills,
+   runtime and other system directories.
 8. Every required project-state artifact has a read-only template.
+9. Top-level numbered directories have unique numbers.
+10. skills/SKILL-MANIFEST-TEMPLATE.yaml parses and contains required keys.
 
 Usage: python scripts/validate_skills.py
 """
@@ -40,11 +43,32 @@ SKIP_DIRS = {TEMPLATES_DIR}
 
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 BACKTICK_RE = re.compile(r"`([^`\n]+)`")
+MD_LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
 REPORT_BACK_RE = re.compile(r"^#{1,3}\s+.*Report Back", re.MULTILINE)
 
 LIFECYCLE_STATES = {"draft", "review", "stable", "deprecated", "archived"}
 RISK_LEVELS = {"low", "medium", "high", "critical"}
 SUPPORTING_LIMIT = 2
+
+MANIFEST_TEMPLATE_KEYS = {
+    "name", "version", "description", "capabilities",
+    "trigger", "risk", "dependencies", "status",
+}
+
+# Repo areas covered by reference-integrity scanning
+SYSTEM_SCAN_DIRS = (
+    "runtime",
+    "architecture",
+    "docs",
+    "evaluation",
+    "governance",
+    "memory",
+    "15-skill-engineering",
+    "16-agent-operating-system",
+    "17-benchmarks",
+    "18-case-studies",
+    "schemas",
+)
 
 # Internal English ID -> instantiated Chinese artifact (per
 # skills/agent-engineering-master/resources/PROJECT-DOCUMENT-NAMING.md)
@@ -378,12 +402,29 @@ def resolve_reference(token: str, from_file: Path) -> bool:
     return any(c.exists() for c in candidates)
 
 
+def _iter_md_files() -> list[Path]:
+    files = [SKILLS_DIR / "README.md", SKILLS_DIR / "DEPLOY.md"]
+    files += list(SKILLS_DIR.rglob("*.md"))
+    files.append(REPO_ROOT / "README.md")
+    for d in SYSTEM_SCAN_DIRS:
+        path = REPO_ROOT / d
+        if path.is_dir():
+            files.extend(path.rglob("*.md"))
+            files.extend(path.glob("*.yaml"))
+    return sorted(set(files))
+
+
 def check_file_references() -> None:
-    md_files = [p for p in SKILLS_DIR.rglob("*.md")]
-    for md in md_files:
+    for md in _iter_md_files():
+        if not md.exists() or md.suffix == ".yaml":
+            continue
         rel = md.relative_to(REPO_ROOT)
         text = md.read_text(encoding="utf-8")
-        for token in BACKTICK_RE.findall(text):
+        tokens = BACKTICK_RE.findall(text)
+        for target in MD_LINK_RE.findall(text):
+            if not target.startswith(("http://", "https://", "mailto:")):
+                tokens.append(target)
+        for token in tokens:
             token = token.strip()
             if not re.search(r"\.(md|ya?ml)$", token, re.IGNORECASE):
                 continue
@@ -395,6 +436,28 @@ def check_file_references() -> None:
                 continue
             if not resolve_reference(token, md):
                 err(f"{rel}: unresolved file reference '{token}'")
+
+
+def check_numbered_dirs() -> None:
+    seen: dict[str, str] = {}
+    for entry in sorted(REPO_ROOT.iterdir()):
+        match = re.match(r"^(\d+)-", entry.name)
+        if entry.is_dir() and match:
+            num = match.group(1)
+            if num in seen:
+                err(f"duplicate top-level directory number '{num}': {seen[num]} vs {entry.name}")
+            seen[num] = entry.name
+
+
+def check_manifest_template() -> None:
+    path = SKILLS_DIR / "SKILL-MANIFEST-TEMPLATE.yaml"
+    if not path.exists():
+        err("skills/SKILL-MANIFEST-TEMPLATE.yaml: missing")
+        return
+    tpl = parse_simple_yaml(path.read_text(encoding="utf-8"))
+    missing = MANIFEST_TEMPLATE_KEYS - set(tpl)
+    if missing:
+        err(f"SKILL-MANIFEST-TEMPLATE.yaml: missing keys {sorted(missing)}")
 
 
 def check_templates() -> None:
@@ -426,6 +489,8 @@ def main() -> int:
     check_dependency_graph(skills)
     check_file_references()
     check_templates()
+    check_numbered_dirs()
+    check_manifest_template()
 
     for w in warnings:
         print(f"WARN: {w}")

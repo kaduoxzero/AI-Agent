@@ -18,20 +18,24 @@ Skill 必须描述能力，而不是行业。
 
 ## Skill 分层
 
+```text
+skills/        core skills（行业无关，当前全部 13 个）
+runtime/       运行时治理（行业无关）
+domain/        领域扩展（未来按行业新增）
 ```
-skills/
-  core/
-  domain/
+
+Core Skill 可以复用于所有行业；Domain Skill 提供具体业务能力，且不得修改 Core Runtime 文件。分层规范见 `CORE-DOMAIN-SEPARATION.md`。
+
+## 每个 Skill 必须包含
+
+```text
+SKILL.md     执行协议（frontmatter: name / version / description）
+skill.yaml   机器可读 manifest
 ```
 
-Core Skill 可以复用于所有行业。
+推荐补充：README.md、examples、tests、resources。
 
-Domain Skill 提供具体业务能力。
+manifest 模板与校验规则：
 
-## 每个 Skill 应包含
-
-- SKILL.md
-- manifest.yaml
-- README.md
-- examples
-- tests
+- 模板：`skills/SKILL-MANIFEST-TEMPLATE.yaml`
+- 校验执行器：`scripts/validate_skills.py`

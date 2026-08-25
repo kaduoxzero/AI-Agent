@@ -1,5 +1,7 @@
 # Skill Router Engineering
 
+> 运行时规范与路由策略配置见 `../runtime/skill-router/`（含 `../runtime/skill-router/routing-policy.yaml`）；本文提供工程设计视角。
+
 ## 定位
 
 Skill Router 是 Agent 能力选择层，根据任务目标、上下文、权限和成本策略选择最合适的 Skill。

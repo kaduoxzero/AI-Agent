@@ -1,5 +1,7 @@
 # Skill Validator Engineering
 
+> 运行时规范与校验规则配置见 `../runtime/skill-validator/`；可执行校验器为 `../scripts/validate_skills.py`（CI 强制执行）。本文提供工程设计视角。
+
 ## 目标
 
 Skill Validator 用于保证 Agent Skill 的质量、安全和兼容性。

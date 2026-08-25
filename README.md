@@ -25,10 +25,11 @@ Reference Platform Starter + Security + SRE + Platform Engineering
 - **15 个知识领域**：从模型、Context、Tool、RAG、Pattern、Multi-Agent 到 Runtime、Security、SRE、Platform；
 - **18 个实际 Lab**：每个 Lab 都有代码和工程验收目标；
 - **Golden Dataset / Security Red Team Dataset**：用于 Output、Trajectory、Tool、安全回归；
-- **GitHub Actions**：自动执行 Lab 和 Reference Starter 测试；
+- **GitHub Actions**：自动执行 Lab 和 Reference Starter 测试，并对 Skills 体系做结构校验；
 - **Reference Agent Platform Starter**：FastAPI Task API、Typed Contract、Dockerfile、PostgreSQL、Redis、API Test；
 - **Reference Architecture**：统一生产级 Agent 平台架构蓝图；
-- **Schemas / ADR / Glossary / References**：数据契约、架构决策、术语与官方资料。
+- **Schemas / ADR / Glossary / References**：数据契约、架构决策、术语与官方资料；
+- **Agent Engineering Runtime v2 与 Skills 体系**：可注册、可校验、可版本管理的 Skill 工程系统（见下节）。
 
 > 注意：GitHub Actions Workflow 已经写入仓库，但是否通过应以仓库 Actions 页面中的实际 Check Run 为准；不要把“存在 CI 配置”与“当前 CI 已绿”混为一谈。
 
@@ -96,6 +97,36 @@ Reference Agent Platform
   ↓
 生产级毕业项目
 ```
+
+# Agent Engineering 工程体系（Runtime v2）
+
+仓库不只是知识库，还包含一套可治理的 Agent 工程系统：
+
+| 目录 | 职责 | 权威入口 |
+|---|---|---|
+| `skills/` | 13 个可注册 Skill（SKILL.md 执行协议 + skill.yaml 机器清单 + 模板） | [skills/README.md](skills/README.md) |
+| `runtime/` | Runtime v2 治理层：registry / router / loader / validator / policy / state 规范 | [runtime/README.md](runtime/README.md) |
+| `schemas/` | Agent / Task / Evidence 等共享数据契约 | [schemas/README.md](schemas/README.md) |
+| `architecture/` | Core-Domain 分层与 Skill 设计规范 | [architecture/CORE-DOMAIN-SEPARATION.md](architecture/CORE-DOMAIN-SEPARATION.md) |
+| `docs/` | v2 架构说明与 Skill 开发标准 | [docs/AI-AGENT-V2-ARCHITECTURE.md](docs/AI-AGENT-V2-ARCHITECTURE.md) |
+| `evaluation/` | 评估框架：benchmark schema、metrics、路由与安全用例 | [evaluation/README.md](evaluation/README.md) |
+| `evals/` | 可执行数据集：Golden Dataset 与 Red Team 数据（jsonl） | [evals/golden/agent_baseline.jsonl](evals/golden/agent_baseline.jsonl) |
+| `governance/` | Tool 风险分级与确认策略 | [governance/tool-governance.yaml](governance/tool-governance.yaml) |
+| `memory/` | Memory L0-L4 分层、生命周期与记录 Schema | [memory/README.md](memory/README.md) |
+| `15-skill-engineering/` | Skill Router / Validator 工程设计视角 | [15-skill-engineering/README.md](15-skill-engineering/README.md) |
+| `16-agent-operating-system/` | Agent OS：把 Agent 当受管软件实体治理 | [16-agent-operating-system/README.md](16-agent-operating-system/README.md) |
+| `17-benchmarks/` | Agent 能力基准框架（Planning/Tool/RAG/Safety/Cost 等） | [17-benchmarks/README.md](17-benchmarks/README.md) |
+| `18-case-studies/` | Coding / Knowledge / Healthcare 场景案例骨架 | [18-case-studies/README.md](18-case-studies/README.md) |
+
+机器事实源与护栏：
+
+```text
+runtime/skill-registry.yaml      Skill 注册表（status / category，SSoT）
+scripts/validate_skills.py       结构校验执行器（manifest 一致性、引用完整性等）
+.github/workflows/skills.yml     CI 强制校验
+```
+
+核心约定：Skill 内部协议使用英文 ID；实例化到业务项目的状态文档使用中文文件名（映射见 `skills/agent-engineering-master/resources/PROJECT-DOCUMENT-NAMING.md`）；模板只读，项目状态隔离在 `<project>/.agent-engineering/`。
 
 # 完整学习目录
 
@@ -195,9 +226,13 @@ Reference Agent Platform
 # 工程实训与规范
 
 - [Hands-on Labs：18 个已实现 Agent 工程实训](labs/README.md)
+- [Agent Engineering Skills：可注册可校验的技能体系](skills/README.md)
+- [Agent Runtime v2：运行时治理层](runtime/README.md)
+- [Skill 开发标准与结构校验](docs/SKILL-DEVELOPMENT-STANDARD.md)
 - [Reference Agent Platform Starter：可启动工程脚手架](reference-architecture/starter/README.md)
 - [Production Reference Architecture：生产架构蓝图](reference-architecture/README.md)
 - [Golden Evals](evals/)
+- [Evaluation Framework](evaluation/README.md)
 - [Examples：最小可运行示例规划](examples/README.md)
 - [Shared Schemas：Task / Event / Artifact / Evidence 数据契约](schemas/README.md)
 - [ADR：Architecture Decision Records](adrs/README.md)

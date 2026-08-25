@@ -1,30 +1,15 @@
-apiVersion: agent/v1
-kind: Skill
-metadata:
-  name: example-skill
-  version: 1.0.0
-  description: Example reusable agent capability
+# Skill Manifest Template
 
-spec:
-  purpose: ""
+> 本文件已被规范模板取代。Skill manifest 的唯一权威模板：
 
-  inputs:
-    - name: request
-      type: string
+```text
+skills/SKILL-MANIFEST-TEMPLATE.yaml
+```
 
-  outputs:
-    - name: result
-      type: artifact
+实际实例见各技能目录：
 
-  tools: []
+```text
+skills/<skill-name>/skill.yaml
+```
 
-  permissions:
-    filesystem: false
-    network: false
-
-  evaluation:
-    datasets: []
-    metrics: []
-
-  lifecycle:
-    status: draft
+结构差异说明：本目录曾使用 apiVersion/kind/metadata/spec 结构；运行时体系最终采用扁平结构（name / version / category / description / capabilities / trigger / risk / dependencies / status）。校验规则由 `scripts/validate_skills.py` 执行。
