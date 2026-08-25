@@ -1,0 +1,23 @@
+version: 1.0
+
+skill_registry:
+  required_fields:
+    - name
+    - version
+    - category
+    - capabilities
+    - risk
+    - compatibility
+
+lifecycle:
+  states:
+    - draft
+    - review
+    - stable
+    - deprecated
+    - archived
+
+rules:
+  - every_skill_requires_manifest: true
+  - domain_skills_cannot_modify_core_runtime: true
+  - deprecated_skills_cannot_be_loaded_by_default: true
