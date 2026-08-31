@@ -1,173 +1,173 @@
-# Agent Boundary Canvas
+# Agent 边界画布
 
-> 用于在设计或修改 Agent 前，系统地确认“它能做什么、不能做什么、能访问什么、能决定什么、什么时候必须停下来”。
+> 用于在设计或修改 Agent 前，系统确认“它能做什么、不能做什么、能访问什么、能决定什么、什么时候必须停下来”。项目实例文件：`.agent-engineering/边界画布.md`。
 
-## 1. Goal Boundary
+## 1. 目标边界
 
-- Primary Goal:
-- Business Outcome:
-- Explicit Out-of-Scope:
-- Non-Goals:
+- 主要目标：
+- 业务结果：
+- 明确不在范围内：
+- 非目标：
 
-## 2. User Boundary
+## 2. 用户边界
 
-- Intended Users:
-- Disallowed Users:
-- Tenant Model:
-- Identity Source:
+- 目标用户：
+- 禁止用户：
+- 租户模型：
+- 身份来源：
 
-## 3. Input Boundary
+## 3. 输入边界
 
-- Accepted Inputs:
-- Untrusted Inputs:
-- File / Image / Audio / Web Inputs:
-- Max Input Size:
+- 接受的输入：
+- 不可信输入：
+- 文件 / 图片 / 音频 / Web 输入：
+- 最大输入大小：
 
-## 4. Output Boundary
+## 4. 输出边界
 
-- Output Artifact:
-- Structured Schema:
-- Citation Required: Yes / No
-- Human Editable: Yes / No
+- 输出产物：
+- 结构化 Schema：
+- 是否必须引用来源：是 / 否
+- 是否允许人工编辑：是 / 否
 
-## 5. Autonomy Boundary
+## 5. 自主性边界
 
-### Agent may decide
+### Agent 可以自主决定
 
-- [ ] Whether to retrieve
-- [ ] Which Tool to call
-- [ ] Tool order
-- [ ] Retry
-- [ ] Task decomposition
-- [ ] Delegation
-- [ ] Other:
+- [ ] 是否检索
+- [ ] 调用哪个 Tool
+- [ ] Tool 调用顺序
+- [ ] 是否重试
+- [ ] 任务拆分
+- [ ] 子任务委派
+- [ ] 其他：
 
-### Agent may NOT decide
+### Agent 不可以自主决定
 
-- Permission policy:
-- Budget increase:
-- High-risk approval:
-- Security bypass:
-- Other:
+- 权限策略：
+- 预算提升：
+- 高风险审批：
+- 安全规则绕过：
+- 其他：
 
-Autonomy Level: A0 / A1 / A2 / A3 / A4
+自主性等级：A0 / A1 / A2 / A3 / A4
 
-## 6. Knowledge Boundary
+## 6. 知识边界
 
-| Source | Read | Write | Trust Level | Tenant Filter | Citation | Notes |
+| 来源 | 可读 | 可写 | 信任等级 | 租户过滤 | 是否引用 | 备注 |
 |---|---|---|---|---|---|---|
-| Model Knowledge | | | | | | |
-| Enterprise KB | | | | | | |
-| Database | | | | | | |
+| 模型知识 | | | | | | |
+| 企业知识库 | | | | | | |
+| 数据库 | | | | | | |
 | Web | | | | | | |
-| User Files | | | | | | |
+| 用户文件 | | | | | | |
 | Memory | | | | | | |
 
-## 7. Tool / Capability Boundary
+## 7. Tool / 能力边界
 
-| Tool | Type | Permission Scope | Side Effect | Idempotent | HITL | Timeout | Retry |
+| Tool | 类型 | 权限范围 | 外部副作用 | 幂等 | HITL | 超时 | 重试 |
 |---|---|---|---|---|---|---|---|
-| | Read / Write / Destructive | | | | | | |
+| | 只读 / 写入 / 破坏性 | | | | | | |
 
-## 8. Data & Permission Boundary
+## 8. 数据与权限边界
 
-- User Identity:
-- Agent Identity:
-- Tool Identity:
-- Credential Source:
-- RBAC / ABAC / Scope:
-- Cross-Tenant Isolation:
-- Secrets Handling:
-- PII / Sensitive Data:
+- 用户身份：
+- Agent 身份：
+- Tool 身份：
+- 凭据来源：
+- RBAC / ABAC / Scope：
+- 跨租户隔离：
+- Secret 处理：
+- PII / 敏感数据：
 
 ## 9. State / Session / Memory / Checkpoint
 
-- Task State:
-- Session State:
-- Long-term Memory Needed: Yes / No
-- Memory Write Policy:
-- Memory TTL:
-- Checkpoint Needed: Yes / No
-- Resume Semantics:
+- 任务 State：
+- Session State：
+- 是否需要长期 Memory：是 / 否
+- Memory 写入策略：
+- Memory TTL：
+- 是否需要 Checkpoint：是 / 否
+- 恢复语义：
 
-## 10. Multi-Agent Boundary
+## 10. Multi-Agent 边界
 
-Multi-Agent Needed: Yes / No / Deferred
+是否需要 Multi-Agent：是 / 否 / 延后决定
 
-Reason:
+原因：
 
-- [ ] Different permissions
-- [ ] Different context
-- [ ] Different tool sets
-- [ ] Independent expertise
-- [ ] Parallelizable work
-- [ ] Independent reviewer
-- [ ] Different lifecycle
-- [ ] Different model requirements
+- [ ] 权限不同
+- [ ] Context 不同
+- [ ] Tool 集不同
+- [ ] 专业能力独立
+- [ ] 子任务可并行
+- [ ] 需要独立 Reviewer
+- [ ] 生命周期不同
+- [ ] 模型要求不同
 
-Shared State Ownership:
-Handoff / Artifact Contract:
-Failure Propagation:
+共享 State 所有权：
+Handoff / Artifact 契约：
+失败传播方式：
 
-## 11. Time / Budget Boundary
+## 11. 时间与预算边界
 
-- Max Steps:
-- Max Model Calls:
-- Max Tool Calls:
-- Max Retry:
-- Max Wall Clock:
-- Token Budget:
-- Cost Budget:
-- Cancellation:
+- 最大步骤数：
+- 最大模型调用数：
+- 最大 Tool 调用数：
+- 最大重试次数：
+- 最大 Wall Clock：
+- Token 预算：
+- 成本预算：
+- 取消策略：
 
-## 12. Safety / HITL Boundary
+## 12. 安全 / HITL 边界
 
-Human Approval Required For:
+以下动作需要人工审批：
 
-- [ ] Destructive actions
-- [ ] Financial impact
-- [ ] External communication
-- [ ] Account / permission changes
-- [ ] Sensitive data operations
-- [ ] Low-confidence decisions
-- [ ] Other:
+- [ ] 破坏性操作
+- [ ] 金融影响
+- [ ] 外部通信
+- [ ] 账号 / 权限变更
+- [ ] 敏感数据操作
+- [ ] 低置信度决策
+- [ ] 其他：
 
-Approval outcomes:
+审批结果：
 
-- Approve
-- Reject
-- Edit
-- Escalate
-- Timeout
+- 批准（Approve）
+- 拒绝（Reject）
+- 编辑后批准（Edit）
+- 升级处理（Escalate）
+- 超时（Timeout）
 
-Timeout behavior:
+超时行为：
 
-## 13. Failure Boundary
+## 13. 失败边界
 
-| Failure | Detect | Retry | Fallback | Resume | Escalate | Rollback |
+| 失败类型 | 检测方式 | 重试 | 降级 | 恢复 | 升级 | 回滚 |
 |---|---|---|---|---|---|---|
-| Model failure | | | | | | |
-| Tool failure | | | | | | |
-| Retrieval failure | | | | | | |
-| Worker crash | | | | | | |
-| Budget exceeded | | | | | | |
-| Approval timeout | | | | | | |
-| Security violation | | | | | | |
+| 模型失败 | | | | | | |
+| Tool 失败 | | | | | | |
+| 检索失败 | | | | | | |
+| Worker 崩溃 | | | | | | |
+| 超出预算 | | | | | | |
+| 审批超时 | | | | | | |
+| 安全违规 | | | | | | |
 
-## 14. Evaluation Boundary
+## 14. 评估边界
 
-- Golden Cases:
-- Failure Cases:
-- Security Cases:
-- Tool / Trajectory Rules:
-- Groundedness Requirement:
-- Latency Target:
-- Cost Target:
-- Release Gate:
+- Golden Cases：
+- Failure Cases：
+- Security Cases：
+- Tool / Trajectory 规则：
+- Groundedness 要求：
+- 延迟目标：
+- 成本目标：
+- 发布 Gate：
 
-## 15. Observability Boundary
+## 15. 可观测性边界
 
-Required fields:
+必须记录的字段：
 
 - [ ] Task ID
 - [ ] Trace ID
@@ -184,6 +184,6 @@ Required fields:
 - [ ] Error Category
 - [ ] Artifact
 
-## Final Boundary Statement
+## 最终边界声明
 
-> This Agent is allowed to ______, may autonomously decide ______, may access ______, must request human approval before ______, must stop when ______, and is considered successful when ______.
+> 本 Agent 被允许执行 ______；可自主决定 ______；可访问 ______；在执行 ______ 前必须请求人工批准；出现 ______ 时必须停止；满足 ______ 时视为任务成功。

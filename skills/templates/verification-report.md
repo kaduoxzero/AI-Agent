@@ -1,65 +1,65 @@
-# Agent Verification Report Template
+# Agent 验证报告
 
-> 用于功能完成、Bug 修复、迁移、重构或上线前，记录“到底验证了什么”。
+> 用于功能完成、Bug 修复、迁移、重构或上线前，记录“到底验证了什么”。项目实例文件：`.agent-engineering/验证报告.md`。
 
-## 1. Change Summary
-
-```text
-Task:
-Version / commit:
-Primary skill used:
-Changed modules:
-User-visible behavior changed:
-```
-
-## 2. Baseline Comparison
+## 1. 修改摘要
 
 ```text
-Previous behavior:
-New behavior:
-Preserved behavior:
+任务：
+版本 / Commit：
+使用的主 Skill：
+修改模块：
+用户可见行为是否变化：
 ```
 
-## 3. Static Verification
+## 2. 基线对比
 
-- [ ] Imports / build succeed
-- [ ] Type checks succeed
-- [ ] Lint / format checks relevant to scope succeed
-- [ ] Config parses correctly
-- [ ] Schema validation succeeds
+```text
+修改前行为：
+修改后行为：
+保持不变的行为：
+```
 
-Notes:
+## 3. 静态验证
+
+- [ ] Import / Build 成功
+- [ ] Type Check 成功
+- [ ] 与本次范围相关的 Lint / Format 检查成功
+- [ ] 配置可正确解析
+- [ ] Schema Validation 成功
+
+备注：
 
 ```text
 
 ```
 
-## 4. Unit / Component Tests
+## 4. 单元 / 组件测试
 
-| Test | Result | Notes |
+| 测试 | 结果 | 备注 |
 |---|---|---|
-| | PASS / FAIL / NOT RUN | |
+| | 通过 / 失败 / 未运行 | |
 
-## 5. Regression Tests
+## 5. 回归测试
 
-| Existing behavior | Result | Evidence |
+| 既有行为 | 结果 | 证据 |
 |---|---|---|
 | | | |
 
-## 6. Agent Trajectory Verification
+## 6. Agent 执行轨迹验证
 
 检查：
 
 - [ ] 正确选择 Agent / Workflow
 - [ ] 正确选择 Tool
 - [ ] Tool 参数正确
-- [ ] 没有不必要重复调用
+- [ ] 没有不必要的重复调用
 - [ ] State 更新正确
 - [ ] 终止条件正确
 - [ ] Handoff / Routing 正确（如适用）
 - [ ] Checkpoint / Resume 正确（如适用）
 
-## 7. RAG Verification
+## 7. RAG 验证
 
 如适用：
 
@@ -70,91 +70,91 @@ Notes:
 - [ ] 无命中时行为正确
 - [ ] 恶意文档不能覆盖系统策略
 
-## 8. Security Verification
+## 8. 安全验证
 
-- [ ] Identity boundary 正确
-- [ ] Tool allowlist 正确
-- [ ] Permission scope 正确
-- [ ] Cross-tenant access 被拒绝
-- [ ] High-risk action 进入 HITL
+- [ ] Identity Boundary 正确
+- [ ] Tool Allowlist 正确
+- [ ] Permission Scope 正确
+- [ ] Cross-Tenant Access 被拒绝
+- [ ] High-Risk Action 进入 HITL
 - [ ] Secret 未进入 Prompt / Log / Artifact
-- [ ] Side effect 具备幂等或恢复策略
+- [ ] Side Effect 具备幂等或恢复策略
 
-## 9. Reliability Verification
+## 9. 可靠性验证
 
 - [ ] Timeout 有界
 - [ ] Retry 有界
-- [ ] Max steps 生效
-- [ ] Max model calls 生效
-- [ ] Max tool calls 生效
-- [ ] Cost budget 生效
+- [ ] Max Steps 生效
+- [ ] Max Model Calls 生效
+- [ ] Max Tool Calls 生效
+- [ ] Cost Budget 生效
 - [ ] Cancellation 正确
-- [ ] Worker failure 可恢复
-- [ ] Duplicate delivery 安全
+- [ ] Worker Failure 可恢复
+- [ ] Duplicate Delivery 安全
 
-## 10. Eval Result
-
-```text
-Dataset version:
-Baseline version:
-Candidate version:
-Task success baseline:
-Task success candidate:
-Quality delta:
-Safety violations:
-Latency P95:
-Average tokens:
-Average cost:
-Release gate: PASS / FAIL / NOT RUN
-```
-
-## 11. Performance
+## 10. Eval 结果
 
 ```text
-P50 latency:
-P95 latency:
-P99 latency:
-Model calls / task:
-Tool calls / task:
-Input tokens / task:
-Output tokens / task:
-Estimated cost / task:
+Dataset 版本：
+Baseline 版本：
+Candidate 版本：
+Baseline Task Success：
+Candidate Task Success：
+质量变化：
+安全违规数：
+Latency P95：
+平均 Token：
+平均成本：
+Release Gate：通过 / 失败 / 未运行
 ```
 
-## 12. Compatibility
+## 11. 性能
 
-- [ ] Public API compatible
-- [ ] Database compatible
-- [ ] Event schema compatible
-- [ ] State / checkpoint compatible
-- [ ] Existing clients compatible
-- [ ] Migration documented if not compatible
+```text
+P50 延迟：
+P95 延迟：
+P99 延迟：
+每任务模型调用数：
+每任务 Tool 调用数：
+每任务 Input Token：
+每任务 Output Token：
+每任务估算成本：
+```
 
-## 13. Known Limitations
+## 12. 兼容性
+
+- [ ] Public API 兼容
+- [ ] 数据库兼容
+- [ ] Event Schema 兼容
+- [ ] State / Checkpoint 兼容
+- [ ] 现有客户端兼容
+- [ ] 不兼容项已有 Migration 文档
+
+## 13. 已知限制
 
 ```text
 
 ```
 
-## 14. Residual Risks
+## 14. 剩余风险
 
-| Risk | Severity | Mitigation | Owner / Follow-up |
+| 风险 | 严重程度 | 缓解措施 | 负责人 / 后续动作 |
 |---|---|---|---|
 | | | | |
 
-## 15. Rollback
+## 15. 回滚
 
 ```text
-Rollback trigger:
-Rollback procedure:
-Data recovery:
-Expected rollback time / steps:
+回滚触发条件：
+回滚步骤：
+数据恢复：
+预计回滚时间 / 步骤：
 ```
 
-## 16. Final Decision
+## 16. 最终结论
 
 ```text
-READY / NOT READY / READY WITH KNOWN RISK
+可发布 / 不可发布 / 可发布但存在已知风险
 
-Reason:
+原因：
 ```

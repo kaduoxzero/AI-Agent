@@ -12,7 +12,7 @@ This skill is the only recommended user entry point.
 
 Execution pipeline:
 
-```
+```text
 User Goal
    ↓
 Runtime Bootstrap
@@ -36,9 +36,10 @@ State Update
 
 Before dispatching any specialist skill, read:
 
-```
-PROJECT-STATE-POLICY.md    project state isolation rules (SSoT)
-SKILL-REGISTRY.md          capability registry and switching contracts (SSoT)
+```text
+PROJECT-STATE-POLICY.md                 project state isolation rules (SSoT)
+SKILL-REGISTRY.md                       capability registry and switching contracts (SSoT)
+resources/PROJECT-DOCUMENT-NAMING.md    project artifact naming/language/history rules (SSoT)
 ```
 
 ## Responsibilities
@@ -77,9 +78,9 @@ Master负责：
 
 ## Project Artifact Rules
 
-所有项目级文档默认中文：
+所有项目级实例文档默认必须做到“**文件名中文 + 正文简体中文**”：
 
-```
+```text
 项目状态.yaml
 边界画布.md
 决策记录.md
@@ -90,7 +91,33 @@ Master负责：
 验证报告.md
 ```
 
-Skill 内部协议保持英文。
+硬性要求：
+
+- 文档标题、章节名、表头、说明、检查清单、结论默认使用简体中文；
+- 技术名词、代码标识符、Schema Key、API、库名可以保留英文；
+- 不允许只把文件名改成中文而正文继续沿用英文模板；
+- 用户明确指定其他语言时，以用户要求为准；
+- Skill 内部协议保持英文。
+
+项目状态文件统一使用 `.agent-engineering/项目状态.yaml`，禁止再以 `.agent-engineering/project.yaml` 作为项目实例文件判断入口。
+
+## History Artifact Rules
+
+归档文件必须使用固定宽度时间作为第一个排序键：
+
+```text
+.agent-engineering/history/YYYYMMDD-HHmmss-<task-id>-<中文主题>.md
+```
+
+要求：
+
+- 时间字段全部补零；
+- 使用 `项目状态.yaml` 中稳定的 `project_timezone`；
+- 文件名字典序升序必须等于真实时间升序；
+- 同秒冲突添加 `-01`、`-02` 序号；
+- 不得混用日期格式或把 task-id 放在时间前面。
+
+完整规则见 `resources/PROJECT-DOCUMENT-NAMING.md`。
 
 ## Safety Rules
 
@@ -107,7 +134,7 @@ Skill 内部协议保持英文。
 
 ## Completion Lifecycle
 
-```
+```text
 Plan
  ↓
 Execute

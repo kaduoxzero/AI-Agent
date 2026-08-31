@@ -1,60 +1,60 @@
-# Architecture Summary
+# Agent 架构设计摘要
 
-> 当前确认的架构摘要，Architecture Freeze 或重大架构决策后更新。对应项目状态文件：`.agent-engineering/architecture.md`。
+> 记录当前已确认的架构摘要，在 Architecture Freeze 或重大架构决策后更新。项目实例文件：`.agent-engineering/架构设计.md`。
 
-## Architecture Level
+## 架构层级
 
-- Level: Deterministic Code / State Machine / Deterministic Workflow / LLM Workflow / Single Agent / Agent + Tools-RAG-Memory / Multi-Agent
-- Upgrade Reason（为什么上一层不足）:
+- 层级：Deterministic Code / State Machine / Deterministic Workflow / LLM Workflow / Single Agent / Agent + Tools-RAG-Memory / Multi-Agent
+- 升级原因（为什么上一层不足）：
 
-## Components
+## 核心组件
 
-| Component | Responsibility | Key Contract | Notes |
+| 组件 | 职责 | 关键契约 | 备注 |
 |---|---|---|---|
 | | | | |
 
-## Data & Control Flow
+## 数据流与控制流
 
 ```text
-Trigger
+触发
   ↓
 ...
   ↓
-Final Artifact
+最终 Artifact
 ```
 
 - 谁决定下一步：
 - 哪些步骤必须确定性执行：
 
-## Key Decisions
+## 关键决策
 
-| Decision ID | Topic | One-line Summary |
+| 决策 ID | 主题 | 一句话摘要 |
 |---|---|---|
 | D-001 | | |
 
-详细记录见 `decision-ledger.md`。
+详细记录见 `决策记录.md`。
 
-## Boundaries Snapshot
+## 边界快照
 
-- Autonomy:
-- Knowledge:
-- Tool / Side-Effect:
-- Permission:
-- State / Memory:
-- Multi-Agent:
-- Budget:
-- HITL:
-- Security:
+- 自主性：
+- 知识：
+- Tool / 外部副作用：
+- 权限：
+- State / Memory：
+- Multi-Agent：
+- 预算：
+- HITL：
+- 安全：
 
-完整边界见 `boundary-canvas.md`。
+完整边界见 `边界画布.md`。
 
-## Runtime & Deployment
+## Runtime 与 Deployment
 
-- Runtime Model:
-- Persistence:
-- Deployment Target:
-- Rollback Strategy:
+- Runtime 模型：
+- 持久化：
+- Deployment 目标：
+- Rollback 策略：
 
-## Known Constraints
+## 已知约束
 
 - 

@@ -1,146 +1,146 @@
-# Agent Project Intake Template
+# Agent 项目调研模板
 
-> 用于从 0 到 1、新项目接手、重大改造前快速建立工程上下文。能从仓库直接推断的信息优先自动填写，不要反复询问用户。
+> 用于从 0 到 1、新项目接手或重大改造前快速建立工程上下文。能从仓库直接推断的信息优先自动填写，不要反复询问用户。项目实例文件：`.agent-engineering/项目调研.md`。
 
-## 1. Project Identity
-
-```text
-Project name:
-Repository:
-Current stage: idea / prototype / MVP / production
-Primary language:
-Framework:
-Model provider:
-Deployment target:
-```
-
-## 2. Business Goal
+## 1. 项目身份
 
 ```text
-Primary actor:
-Primary goal:
-Trigger:
-Input:
-Expected output:
-Business value:
+项目名称：
+代码仓库：
+当前阶段：想法 / 原型 / MVP / 生产
+主要开发语言：
+框架：
+模型提供方：
+部署目标：
 ```
 
-## 3. Execution Model
+## 2. 业务目标
 
 ```text
-Current architecture: function / workflow / single-agent / multi-agent
-Who decides the next step:
-Long-running task: yes / no
-Async worker: yes / no
-Human approval: yes / no
+主要参与者：
+主要目标：
+触发方式：
+输入：
+预期输出：
+业务价值：
 ```
 
-## 4. Agent Capabilities
+## 3. 执行模型
 
 ```text
-Prompt:
-Structured Output:
-Tools:
-RAG:
-Memory:
-State:
-Checkpoint:
-Multi-Agent:
-Browser / Computer Use:
-Code / Shell execution:
+当前架构：函数 / Workflow / Single Agent / Multi-Agent
+谁决定下一步：
+是否存在长任务：是 / 否
+是否有异步 Worker：是 / 否
+是否需要人工审批：是 / 否
 ```
 
-## 5. Data & Knowledge
+## 4. Agent 能力
 
 ```text
-Primary data sources:
-Vector store:
-Relational store:
-Cache:
-Artifact store:
-Tenant isolation:
-Knowledge freshness requirement:
+Prompt：
+Structured Output：
+Tools：
+RAG：
+Memory：
+State：
+Checkpoint：
+Multi-Agent：
+Browser / Computer Use：
+Code / Shell execution：
 ```
 
-## 6. Contracts
+## 5. 数据与知识
+
+```text
+主要数据源：
+向量存储：
+关系型存储：
+缓存：
+Artifact 存储：
+租户隔离：
+知识新鲜度要求：
+```
+
+## 6. 契约
 
 记录当前已有或计划中的：
 
 ```text
-TaskRequest:
-TaskRecord:
-AgentState:
-ToolInput / ToolOutput:
-Evidence:
-Artifact:
-Event:
-Error model:
+TaskRequest：
+TaskRecord：
+AgentState：
+ToolInput / ToolOutput：
+Evidence：
+Artifact：
+Event：
+Error Model：
 ```
 
-## 7. Reliability
+## 7. 可靠性
 
 ```text
-Timeout:
-Retry:
-Fallback:
-Max steps:
-Max model calls:
-Max tool calls:
-Max cost:
-Cancellation:
-Resume:
-Idempotency:
+超时：
+重试：
+降级：
+最大步骤：
+最大模型调用：
+最大 Tool 调用：
+最大成本：
+取消：
+恢复：
+幂等性：
 ```
 
-## 8. Security
+## 8. 安全
 
 ```text
-Identity source:
-Permission model:
-Tool scopes:
-Sensitive actions:
-Prompt injection boundary:
-Secrets:
-HITL:
-Audit:
+身份来源：
+权限模型：
+Tool Scope：
+敏感操作：
+Prompt Injection 边界：
+Secrets：
+HITL：
+审计：
 ```
 
-## 9. Quality & Evaluation
+## 9. 质量与评估
 
 ```text
-Existing tests:
-Existing evals:
-Golden dataset:
-Known failure cases:
-Quality target:
-Latency target:
-Cost target:
-Safety target:
+已有测试：
+已有 Eval：
+Golden Dataset：
+已知失败案例：
+质量目标：
+延迟目标：
+成本目标：
+安全目标：
 ```
 
-## 10. Constraints
+## 10. 约束
 
 ```text
-Must preserve:
-Cannot change:
-Required compatibility:
-Infrastructure constraints:
-Deadline / scope constraints:
+必须保留：
+不可修改：
+兼容性要求：
+基础设施约束：
+截止时间 / 范围约束：
 ```
 
-## 11. Current Risks
+## 11. 当前风险
 
-| Risk | Severity | Evidence | Mitigation |
+| 风险 | 严重程度 | 证据 | 缓解措施 |
 |---|---|---|---|
 | | | | |
 
-## 12. Definition of Done
+## 12. 完成定义
 
-- [ ] Core business loop works end-to-end
-- [ ] Public contracts are defined
-- [ ] Tests pass
-- [ ] Relevant evals pass
-- [ ] Permission boundaries are enforced
-- [ ] Failure behavior is bounded
-- [ ] Observability is sufficient
-- [ ] Deployment / rollback path is known
+- [ ] 核心业务闭环可端到端运行
+- [ ] Public Contract 已定义
+- [ ] 测试通过
+- [ ] 相关 Eval 通过
+- [ ] 权限边界已执行
+- [ ] 失败行为有明确边界
+- [ ] 可观测性满足要求
+- [ ] Deployment / Rollback 路径明确

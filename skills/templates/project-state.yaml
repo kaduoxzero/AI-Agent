@@ -1,10 +1,11 @@
-# Project identity for .agent-engineering/project.yaml.
-# Instantiate (copy) into the business project root; never write back to templates/.
+# `.agent-engineering/项目状态.yaml` 的项目身份与运行状态模板。
+# 初始化时复制到业务项目根目录；禁止将项目数据写回 templates/。
 schema_version: 1
-project_id: ""        # stable across the project lifetime; do not regenerate without reason
-project_name: ""      # human-readable name
-project_root: ""      # absolute path; may be updated if the directory moves
-created_at: ""        # ISO 8601 timestamp of first initialization
-updated_at: ""        # ISO 8601 timestamp of last state update
-current_phase: discovery   # discovery | design | build | harden | production
-current_task: null    # short description or id of the current task; null when idle
+project_id: ""          # 项目生命周期内保持稳定，无充分理由不要重新生成
+project_name: ""        # 面向人的项目名称
+project_root: ""        # 项目绝对路径；目录移动后可更新
+project_timezone: ""    # 项目固定时区；历史归档必须始终使用该时区
+created_at: ""          # 首次初始化的 ISO 8601 时间戳
+updated_at: ""          # 最近一次状态更新的 ISO 8601 时间戳
+current_phase: discovery # discovery | design | build | harden | production
+current_task: null       # 当前任务的简短说明或 ID；空闲时为 null

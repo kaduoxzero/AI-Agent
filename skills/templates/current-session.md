@@ -1,80 +1,80 @@
-# Agent Engineering Session State
+# Agent 工程当前会话状态
 
-> 用于让 Agent 在多轮任务中记住当前进行到哪一步、哪些问题已解决、哪些边界还未确定。对应项目状态文件：`.agent-engineering/current-session.md`。
+> 用于让 Agent 在多轮任务中记住当前进行到哪一步、哪些问题已解决、哪些边界仍未确定。项目实例文件：`.agent-engineering/当前会话.md`。
 
-## Session
+## 会话信息
 
-- Project:
-- Mode: Greenfield / Existing Project
-- Current Stage:
-- Primary Goal:
-- Primary Skill:
-- Supporting Skills:
+- 项目：
+- 模式：新项目 / 已有项目
+- 当前阶段：
+- 主要目标：
+- 主 Skill：
+- 辅助 Skill：
 
-## Stage Status
+## 阶段状态
 
-| Stage | Topic | Status | Notes |
+| 阶段 | 主题 | 状态 | 备注 |
 |---|---|---|---|
-| 0 | Problem Framing | Pending | |
-| 1 | Success / Failure | Pending | |
-| 2 | Architecture Level | Pending | |
-| 3 | Autonomy Boundary | Pending | |
-| 4 | Knowledge Boundary | Pending | |
-| 5 | Tool / Side Effect Boundary | Pending | |
-| 6 | State / Memory / Checkpoint | Pending | |
-| 7 | Multi-Agent Boundary | Pending | |
-| 8 | Runtime / Reliability | Pending | |
-| 9 | Identity / Security / HITL | Pending | |
-| 10 | Evaluation | Pending | |
-| 11 | Observability / Operations | Pending | |
-| 12 | Architecture Freeze | Pending | |
-| 13 | Incremental Build | Pending | |
+| 0 | 问题定义 | 待处理 | |
+| 1 | 成功 / 失败标准 | 待处理 | |
+| 2 | 架构层级 | 待处理 | |
+| 3 | 自主性边界 | 待处理 | |
+| 4 | 知识边界 | 待处理 | |
+| 5 | Tool / 外部副作用边界 | 待处理 | |
+| 6 | State / Memory / Checkpoint | 待处理 | |
+| 7 | Multi-Agent 边界 | 待处理 | |
+| 8 | Runtime / 可靠性 | 待处理 | |
+| 9 | Identity / Security / HITL | 待处理 | |
+| 10 | 评估 | 待处理 | |
+| 11 | 可观测性 / 运维 | 待处理 | |
+| 12 | 架构冻结 | 待处理 | |
+| 13 | 增量构建 | 待处理 | |
 
-Status values:
+协议状态值可保留英文 Key，但面向人的含义如下：
 
-- `Pending`
-- `In Progress`
-- `Resolved`
-- `Deferred`
-- `Not Required`
-- `Blocked`
+- `Pending`：待处理
+- `In Progress`：进行中
+- `Resolved`：已解决
+- `Deferred`：已延后
+- `Not Required`：不需要
+- `Blocked`：阻塞
 
-## Resolved Facts
-
-- 
-
-## Accepted Decisions
+## 已确认事实
 
 - 
 
-## Deferred Decisions
+## 已接受决策
 
 - 
 
-## Open Questions
+## 已延后决策
+
+- 
+
+## 待解决问题
 
 只保留真正未解决、会影响架构或实现的问题：
 
 1. 
 
-## Current Recommendation
+## 当前建议
 
 
-## Next User Decision
+## 下一项用户决策
 
 一次只暴露一个主要决策：
 
 ```text
-Question:
+问题：
 A.
 B.
 C.
-Recommended:
-Why:
-Boundary Impact:
+推荐：
+原因：
+边界影响：
 ```
 
-## Agent Can Decide Without Asking
+## Agent 可自行决定
 
 - 命名细节
 - 私有函数拆分
@@ -83,7 +83,7 @@ Boundary Impact:
 - 测试辅助代码
 - 明显符合现有代码规范的实现选择
 
-## Agent Must Surface Before Proceeding
+## Agent 必须先向用户暴露的事项
 
 - 业务目标变化
 - Agent / Workflow / Multi-Agent 层级变化
@@ -95,12 +95,12 @@ Boundary Impact:
 - 成本等级明显变化
 - 无法回滚的 Migration
 
-## Resume Instruction
+## 会话恢复指令
 
 当会话继续时：
 
-1. 先读取本 Session State；
-2. 不重复询问 `Resolved Facts`；
-3. 从 `Current Stage` 恢复；
-4. 仅询问 `Next User Decision`；
-5. 决策完成后同步更新 Decision Ledger 和 Boundary Canvas。
+1. 先读取本会话状态；
+2. 不重复询问“已确认事实”；
+3. 从“当前阶段”恢复；
+4. 仅询问“下一项用户决策”；
+5. 决策完成后同步更新 `决策记录.md` 和 `边界画布.md`。
