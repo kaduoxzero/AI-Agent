@@ -1,0 +1,46 @@
+name: agent-enterprise-handover
+version: 1.0.0
+category: governance
+description: "Enterprise-grade project handover orchestration, knowledge transfer, operability transfer, evidence audit and acceptance gates"
+
+capabilities:
+  - handover_orchestration
+  - ownership_transfer
+  - knowledge_transfer
+  - asset_inventory
+  - operability_audit
+  - evidence_classification
+  - handover_gap_analysis
+  - runbook_generation
+  - reverse_shadow_acceptance
+  - handover_scoring
+
+trigger:
+  keywords:
+    - "handover project takeover ownership transfer 交接 接手 移交 离职交接 模块交接 交接文档"
+
+input:
+  required: []
+
+output:
+  artifacts:
+    - handover_package
+    - asset_inventory
+    - evidence_register
+    - runbook
+    - risk_register
+    - acceptance_report
+    - final_handover_report
+
+risk:
+  level: medium
+
+dependencies:
+  - agent-project-orchestrator
+  - agent-architecture-reviewer
+  - agent-existing-project-modifier
+  - agent-eval-hardening
+  - agent-security-reviewer
+  - agent-productionizer
+
+status: stable
