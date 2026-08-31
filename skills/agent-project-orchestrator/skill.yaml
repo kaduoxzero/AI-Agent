@@ -1,16 +1,17 @@
 name: agent-project-orchestrator
-version: 1.1.0
+version: 1.2.0
 category: orchestration
-description: "Classifies a task and routes it to the right specialist workflow"
+description: "Classifies a task and routes it to the right specialist workflow, including enterprise handover/takeover"
 
 capabilities:
   - task_classification
   - workflow_routing
   - guided_mode_detection
+  - handover_routing
 
 trigger:
   keywords:
-    - "route orchestrate task type unclear which skill"
+    - "route orchestrate task type unclear which skill handover takeover 交接 接手 移交"
 
 input:
   required:
@@ -22,6 +23,7 @@ output:
 risk:
   level: low
 
-dependencies: []
+dependencies:
+  - agent-enterprise-handover
 
 status: stable
