@@ -1,18 +1,18 @@
 ---
 name: agent-project-orchestrator
-version: 1.1.0
-description: Route Agent engineering work to the correct workflow and decide whether an interactive guided design session is required before coding. Use when a request may involve greenfield Agent development, modification of an existing Agent project, debugging, architecture review, RAG, Multi-Agent, evaluation, security, productionization, or performance/cost optimization.
+version: 1.2.0
+description: Route Agent engineering work to the correct workflow and decide whether an interactive guided design session is required before coding. Use when a request may involve greenfield Agent development, modification of an existing Agent project, debugging, architecture review, project handover/takeover, RAG, Multi-Agent, evaluation, security, productionization, or performance/cost optimization.
 ---
 
 # Agent Project Orchestrator
 
 ## Objective
 
-把“帮我做一个智能体 / 帮我改这个 Agent / 带我一步步设计 / 这个项目有问题”转换成明确、可执行、可验收的工程任务，并选择正确的专项 Skill。
+把“帮我做一个智能体 / 帮我改这个 Agent / 带我一步步设计 / 这个项目有问题 / 帮我交接或接手这个项目”转换成明确、可执行、可验收的工程任务，并选择正确的专项 Skill。
 
 Orchestrator 负责三件事：
 
-1. 判断当前是 Greenfield、Existing Project、Bug、Architecture 还是专项工程问题；
+1. 判断当前是 Greenfield、Existing Project、Bug、Architecture、Handover 还是专项工程问题；
 2. 判断是否应先进入 **Guided Workshop**；
 3. 选择 1 个主 Skill + 必要的辅助 Skill。
 
@@ -32,6 +32,8 @@ Orchestrator 负责三件事：
 - 已有项目准备进行大规模能力升级，但 Change Boundary 尚不明确；
 - 用户明确希望 Agent 给出选项并帮助做取舍。
 
+交接任务例外：如果用户意图明确是“项目交接 / 接手 / ownership transfer”，优先进入 `agent-enterprise-handover` 做 Scope Freeze 与 Asset Discovery；只有交接范围本身存在关键歧义时，才使用 `agent-grill-me`。不要因为交接内容很多就自动进入 Guided Builder。
+
 如果用户已经给出了完整目标、边界和技术约束，或者明确说“不要再问，直接做”，可以不进入逐项交互；但仍必须内部完成 Boundary Canvas 与 Decision Ledger。
 
 ## Non-Negotiable Rules
@@ -46,10 +48,16 @@ Orchestrator 负责三件事：
 8. 关键架构决策要暴露 Trade-off；普通实现细节不用打断用户。
 9. Guided Mode 每轮只推进一个主要决策阶段。
 10. 用户已回答的信息必须进入 Decision Ledger，不能后续重复询问。
+11. 交接任务不能把“生成文档”当成“完成交接”；必须至少审查资产、运行、验证、风险和 Ownership。
+12. 对交接口述信息要区分 VERIFIED / DOCUMENTED / REPORTED / INFERRED / UNKNOWN，不能把推测写成事实。
 
 ## Routing Decision
 
 ```text
+是否明确是项目交接 / 接手 / 移交 / takeover？
+├─ 是 → agent-enterprise-handover
+└─ 否
+   ↓
 需求清晰且完整？
 ├─ 否（模糊 / 不完整 / 多方案歧义）→ agent-grill-me
 │        ↓
@@ -82,6 +90,7 @@ Orchestrator 负责三件事：
 领域路由：
 
 - 需求澄清、边界探索、高价值决策取舍 → `agent-grill-me`
+- 项目交接、项目接手、Ownership Transfer、离职/轮岗移交、交接审计 → `agent-enterprise-handover`
 - 知识库、检索、Embedding、Rerank、引用 → `agent-rag-engineer`
 - Supervisor、Handoff、Debate、Swarm、多个 Agent → `agent-multi-agent-designer`
 - 测试、Benchmark、Regression、稳定性 → `agent-eval-hardening`
@@ -136,13 +145,26 @@ Evaluation / Observability
 → 用户关键决策
 ```
 
+交接任务额外检查：
+
+```text
+Handover Scope / Out of Scope
+Current Owner / Target Owner
+Assets
+Runtime Operability
+Permissions
+Known Issues / Risks
+Evidence Level
+Acceptance Gates
+```
+
 ## Intake Workflow
 
 ### 1. 识别任务类型
 
 记录：
 
-- Greenfield / Existing Project
+- Greenfield / Existing Project / Handover / Takeover
 - Feature / Bug / Refactor / Migration / Performance / Security / Production
 - Guided / Direct Execution
 - 是否需要 RAG
@@ -150,6 +172,7 @@ Evaluation / Observability
 - 是否需要 Memory
 - 是否可能 Multi-Agent
 - 是否涉及高风险 Action
+- 是否涉及 Ownership Transfer / Reverse Shadow
 
 ### 2. 识别不可变约束
 
@@ -165,6 +188,14 @@ Evaluation / Observability
 - 资源限制；
 - 安全要求。
 
+交接任务还需识别：
+
+- 当前交接范围；
+- 哪些环境在范围内；
+- 当前 Owner 与目标 Owner；
+- 是否需要 Production / Release / Rollback 交接；
+- 是否存在接手验收要求。
+
 ### 3. 建立 Done Definition
 
 至少覆盖：
@@ -177,14 +208,25 @@ Evaluation / Observability
 - 安全结果；
 - 文档 / 配置结果。
 
+交接任务的 Done Definition 必须额外覆盖：
+
+- Asset Ready；
+- Runtime Ready；
+- Operations Ready；
+- Ownership Ready；
+- Reverse Shadow / Acceptance Gate。
+
 ### 4. 选择 Skill 组合
 
 一个任务通常只加载：
 
 - 1 个主 Skill；
-- 1~3 个辅助 Skill。
+- 1~3 个辅助 Skill 的候选集合；
+- 任一时刻实际 Supporting Skill 不超过 Master Registry 规定的上限。
 
 不要一次把所有 Skill 都放入上下文。
+
+`agent-enterprise-handover` 属于聚合型 Primary Skill：它可以顺序调用 Architecture、Existing Project、Evaluation、Security、Production 等专项能力，专项完成后必须回到 Handover 聚合证据并继续 Gate 验收。
 
 ## Guided Conversation Contract
 
@@ -224,6 +266,18 @@ Boundary Risks:
 Verification Required:
 ```
 
+交接任务增加：
+
+```text
+Handover Mode:
+Handover Scope:
+Current Owner:
+Target Owner:
+Evidence Status:
+Critical Gaps:
+Acceptance Required:
+```
+
 ## Stop Conditions
 
 出现以下情况必须停止扩大改动：
@@ -236,9 +290,20 @@ Verification Required:
 - 用户选择的自治范围超过当前安全边界；
 - Multi-Agent 没有可解释的职责 / 权限 / Context 边界。
 
+交接任务出现以下情况时停止“宣布完成”，转为 `INCOMPLETE / BLOCKED`：
+
+- 核心 Repository 无法访问；
+- 接手人无法启动项目；
+- 关键资产只存在原负责人本地；
+- Production Owner / Release / Rollback 不明确；
+- 关键权限未移交；
+- Reverse Shadow 的关键项无法完成。
+
 ## Report Back to Master
 
 路由完成后，按 `../agent-engineering-master/SKILL-REGISTRY.md` 的 Return Contract 返回，至少包含 Primary Skill、Supporting Skills 与 Standard Internal Summary 中的关键信息。
+
+交接任务若路由到 `agent-enterprise-handover`，还必须返回 Handover Mode、Scope、Evidence Summary、Critical Gaps、Acceptance Gates 与 Next Exact Action。
 
 ---
 
@@ -252,4 +317,5 @@ Orchestrator 完成的标志：
 - 已锁定主要约束；
 - 已定义或安排定义边界；
 - 已定义验收标准；
-- 已进入真正的设计、实现或验证流程。
+- 交接任务已识别 Ownership Transfer 与 Acceptance 要求；
+- 已进入真正的设计、实现、交接或验证流程。
