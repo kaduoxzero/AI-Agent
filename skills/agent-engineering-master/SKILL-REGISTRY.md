@@ -38,6 +38,7 @@ Project B/.agent-engineering/      Project B State
 | Task Routing | `../agent-project-orchestrator/SKILL.md` | 任务跨多个领域或初始意图模糊 |
 | Greenfield | `../agent-greenfield-builder/SKILL.md` | 新项目从 0 到 1 |
 | Existing Project Change | `../agent-existing-project-modifier/SKILL.md` | 已有项目新增、重构、迁移、兼容修改 |
+| Enterprise Handover | `../agent-enterprise-handover/SKILL.md` | 项目交接、离职/轮岗移交、模块交接、项目接手、交接审计、Agent-to-Agent handover |
 | Architecture | `../agent-architecture-reviewer/SKILL.md` | 职责混乱、过度 Agent 化、结构耦合 |
 | Debugging | `../agent-debugger/SKILL.md` | 死循环、Tool 不调用、State 错乱、异常轨迹 |
 | RAG | `../agent-rag-engineer/SKILL.md` | Retrieval、Rerank、Citation、ACL、Agentic RAG |
@@ -65,6 +66,8 @@ agent-grill-me（最少高价值问题 + 边界扫描）
 
 grill-me 产出的已确认决策写入当前项目 `决策记录.md`，边界结论写入 `边界画布.md`；后续 Skill 禁止重复询问这些内容。
 
+对于明确的“交接 / 接手 / 移交 / takeover / ownership transfer”请求，不需要因为交接内容很多就强制进入 Guided Builder。应优先进入 `agent-enterprise-handover`，由其先做 Scope Freeze 和 Asset Discovery；只有交接范围本身存在关键歧义时，才临时调用 `agent-grill-me`。
+
 ---
 
 ## Runtime Skill Switching
@@ -80,9 +83,23 @@ Security Signal
 Evaluation Signal
 Performance Signal
 Production Signal
+Handover Signal
 ```
 
 任一信号被触发时，可以暂停当前专项流程，加载对应 Skill 处理，再返回原流程。
+
+### Handover Signal
+
+出现以下信号时优先切换到 `agent-enterprise-handover`：
+
+- 用户要求项目交接、离职交接、模块交接、临时移交；
+- 用户要“接手别人项目”并检查缺什么；
+- 当前任务即将结束，需要形成可被下一负责人继续执行的正式交接包；
+- 发现项目存在强烈 Bus Factor / Knowledge SPOF；
+- Agent-to-Agent 需要把复杂任务状态、验证证据和 Next Exact Action 传给下一 Agent；
+- 用户要求审查现有交接文档是否真正可执行。
+
+`agent-enterprise-handover` 是聚合型 Primary Skill。它可以按阶段调用 Architecture / Existing Project / Evaluation / Security / Production 等专项 Skill，但任一时刻仍必须遵守 Primary Skill = 1、Supporting Skills <= 2 的加载策略。
 
 例如：
 
@@ -124,6 +141,26 @@ Performance Optimizer
 返回 Greenfield Builder
 ```
 
+交接场景示例：
+
+```text
+Enterprise Handover
+    ↓
+Repository / Architecture Discovery
+    ↓
+Architecture Reviewer
+    ↓
+返回 Handover 聚合架构证据
+    ↓
+Productionizer 验证 Runbook / Release / Rollback
+    ↓
+返回 Handover
+    ↓
+Eval Hardening 验证 Smoke / Regression Evidence
+    ↓
+Acceptance Gates + Final Handover Report
+```
+
 ---
 
 ## Context Passing Contract
@@ -155,6 +192,19 @@ Return Point
 
 禁止从另一个项目的 `.agent-engineering/` 自动继承状态。
 
+交接任务额外传递：
+
+```text
+Handover Mode
+Handover Scope
+Current Owner
+Target Owner
+Evidence Levels
+Critical Gaps
+Acceptance Gates
+Handover Return Point
+```
+
 ---
 
 ## State Write Routing
@@ -181,6 +231,14 @@ Completed task summary
 → .agent-engineering/history/
 ```
 
+交接专项产物默认写入：
+
+```text
+.agent-engineering/交接/
+```
+
+交接中产生的长期有效架构决策、验证结论和风险不能只留在交接目录；仍应同步到对应长期项目状态文件。
+
 实例文件中文命名的映射规则见 `resources/PROJECT-DOCUMENT-NAMING.md`。
 
 `skills/templates/` 永远不作为写入目标。
@@ -201,6 +259,20 @@ Verification Performed:
 New Risks:
 Unresolved Items:
 Recommended Next Capability:
+```
+
+`agent-enterprise-handover` 额外返回：
+
+```text
+Handover Mode:
+Handover Scope:
+Evidence Level Summary:
+Handover Score:
+Acceptance Gates:
+Critical Gaps:
+Ownership Changes:
+Handover Status:
+Next Exact Action:
 ```
 
 Master 根据结果继续调度，而不是机械返回原 Skill。
