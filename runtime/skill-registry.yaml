@@ -28,6 +28,10 @@ skills:
     status: stable
     category: construction
 
+  agent-enterprise-handover:
+    status: stable
+    category: governance
+
   agent-architecture-reviewer:
     status: stable
     category: governance
