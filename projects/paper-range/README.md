@@ -7,7 +7,7 @@ Paper Range 是 AI-Agent 仓库里的叙事式安全推演实验场。它不是�
 ```text
 选择 / 随机战役
   ↓
-创建临时 Session
+创建临时 Session + 随机 Theme Pack
   ↓
 端口侦察
   ↓
@@ -61,6 +61,27 @@ ssh user@<scene-target>               → ssh_access
 4. 读取证据文件；
 5. 建立模拟访问。
 
+## Theme Pack
+
+每次创建新的 Session，后端会从注册表中随机选择一个 Theme Pack。主题选择属于当前临时 Session；新容器、新 Session 都可能得到不同视觉环境。
+
+当前已经注册 12 套主题：
+
+- `inferno` / Inferno Core；
+- `blood-moon` / Blood Moon；
+- `black-site` / Black Site；
+- `ash-cathedral` / Ash Cathedral；
+- `neon-crypt` / Neon Crypt；
+- `reactor-amber` / Reactor Amber；
+- `plague-green` / Plague Green；
+- `ice-vault` / Ice Vault；
+- `violet-null` / Violet Null；
+- `rust-foundry` / Rust Foundry；
+- `signal-blue` / Signal Blue；
+- `obsidian-gold` / Obsidian Gold。
+
+Theme Pack 通过共享 CSS variables 控制 Shell、Panel、Terminal、Agent、进度条和完成界面，而不是在 React 组件里硬编码主题。后续扩展到 40 套时只需注册主题数据与视觉变量，不需要修改 Game Runtime 的业务状态机。
+
 ## 剧情秘密边界
 
 `GET /api/scenarios` 只返回前端需要的公开战役元数据。以下信息保留在后端完整 `Scenario` 中，不会在进入战役前下发给浏览器：
@@ -80,7 +101,7 @@ container start
   ↓
 全新的 SessionStore
   ↓
-本次运行期间持续复用 WorldState / Clue / Event / Score
+本次运行期间持续复用 WorldState / Clue / Event / Score / Theme
   ↓
 container stop/remove
   ↓
@@ -198,7 +219,7 @@ Hint 每次扣 10 分；无效动作和场景外目标会扣少量分。场景�
 
 当前重点已经从“能不能玩”转向“内容规模和表现力”：
 
-1. Theme Pack 注册机制，从 3 套扩展到 10+，最终目标 40 套；
+1. 将当前 12 套 Theme Pack 继续扩展到最终目标 40 套，并增加场景/主题匹配权重；
 2. Story Graph / Branch / Consequence，让不同动作改变剧情路径；
 3. SSE / WebSocket 事件流，让 Agent、剧情和终端反馈逐步出现；
 4. 增加更多 simulation-only 工具动作，例如 HTTP 变体、日志检索、资产关系调查；
