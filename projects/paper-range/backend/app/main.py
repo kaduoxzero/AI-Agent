@@ -21,7 +21,7 @@ runtime = GameRuntime(store)
 
 app = FastAPI(
     title="Paper Range API",
-    version="0.3.0",
+    version="0.4.0",
     description="Ephemeral narrative cyber-range simulator for AI-Agent.",
 )
 app.add_middleware(
