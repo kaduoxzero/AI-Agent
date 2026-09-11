@@ -3,7 +3,15 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from .models import ActionRequest, ActionResponse, GameSessionView, Scenario, SessionCreateRequest
+from .models import (
+    ActionRequest,
+    ActionResponse,
+    GameSessionView,
+    HintResponse,
+    LearningReport,
+    Scenario,
+    SessionCreateRequest,
+)
 from .runtime import GameRuntime, SessionStore
 from .scenarios import list_scenarios
 
@@ -13,7 +21,7 @@ runtime = GameRuntime(store)
 
 app = FastAPI(
     title="Paper Range API",
-    version="0.1.0",
+    version="0.2.0",
     description="Ephemeral narrative cyber-range simulator for AI-Agent.",
 )
 app.add_middleware(
@@ -56,6 +64,22 @@ def get_session(session_id: str) -> GameSessionView:
 def action(session_id: str, payload: ActionRequest) -> ActionResponse:
     try:
         return runtime.execute(session_id, payload.input)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="session not found") from exc
+
+
+@app.post("/api/sessions/{session_id}/hint", response_model=HintResponse)
+def hint(session_id: str) -> HintResponse:
+    try:
+        return runtime.request_hint(session_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="session not found") from exc
+
+
+@app.get("/api/sessions/{session_id}/report", response_model=LearningReport)
+def report(session_id: str) -> LearningReport:
+    try:
+        return runtime.report(session_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="session not found") from exc
 

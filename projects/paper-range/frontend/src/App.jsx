@@ -25,7 +25,7 @@ function Landing({ scenarios, onStart, loading }) {
         <p className="brand-name">ARMCHAIR GENERAL</p>
         <h1>纸上靶场</h1>
         <p className="hero-lead">
-          不是干巴巴的问答，而是一场会记住你本局行动、会改变世界状态的推演。
+          不是干巴巴的问答，而是一场会记住你本局行动、会改变世界状态，并在结束后告诉你哪里还能更好的推演。
         </p>
         <div className="hero-actions">
           <button className="primary" disabled={loading} onClick={() => onStart(selected)}>
@@ -95,10 +95,47 @@ function ObjectiveList({ scenario, session }) {
   )
 }
 
+function MetricStrip({ session }) {
+  return (
+    <div className="metric-strip">
+      <div><span>SCORE</span><strong>{session.score}</strong></div>
+      <div><span>ACTIONS</span><strong>{session.action_count}</strong></div>
+      <div><span>HINTS</span><strong>{session.hint_count}</strong></div>
+      <div><span>INVALID</span><strong>{session.invalid_action_count}</strong></div>
+    </div>
+  )
+}
+
+function LearningReport({ report }) {
+  if (!report) return <div className="report-loading">正在生成学习报告...</div>
+  return (
+    <div className="learning-report">
+      <div className="grade-box">
+        <span>GRADE</span>
+        <strong>{report.grade}</strong>
+        <small>{report.score} / 100</small>
+      </div>
+      <div className="report-copy">
+        <section>
+          <h3>做得好的地方</h3>
+          <ul>{report.strengths.map((item) => <li key={item}>{item}</li>)}</ul>
+        </section>
+        <section>
+          <h3>下一步训练</h3>
+          <ul>{report.next_steps.map((item) => <li key={item}>{item}</li>)}</ul>
+        </section>
+      </div>
+    </div>
+  )
+}
+
 function Game({ scenario, session, setSession, onExit }) {
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [hintBusy, setHintBusy] = useState(false)
   const [error, setError] = useState('')
+  const [lastHint, setLastHint] = useState('')
+  const [report, setReport] = useState(null)
   const [terminal, setTerminal] = useState(() =>
     session.events.map((event) => ({ type: event.kind, text: event.text })),
   )
@@ -113,6 +150,15 @@ function Game({ scenario, session, setSession, onExit }) {
     [scenario.ssh_user, session.target_ip],
   )
 
+  const loadReport = async () => {
+    try {
+      const payload = await api(`/api/sessions/${session.id}/report`)
+      setReport(payload)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const execute = async (command) => {
     const value = command.trim()
     if (!value || busy) return
@@ -126,7 +172,15 @@ function Game({ scenario, session, setSession, onExit }) {
         body: JSON.stringify({ input: value }),
       })
       setSession(payload.session)
-      setTerminal((lines) => [...lines, { type: 'output', text: payload.output }])
+      setTerminal((lines) => [
+        ...lines,
+        { type: 'intent', text: `[intent:${payload.intent.kind} source:${payload.intent.source}]` },
+        { type: 'output', text: payload.output },
+      ])
+      if (payload.session.status === 'completed') {
+        const finalReport = await api(`/api/sessions/${session.id}/report`)
+        setReport(finalReport)
+      }
     } catch (err) {
       setError(err.message)
       setTerminal((lines) => [...lines, { type: 'error', text: err.message }])
@@ -134,6 +188,26 @@ function Game({ scenario, session, setSession, onExit }) {
       setBusy(false)
     }
   }
+
+  const requestHint = async () => {
+    if (hintBusy || session.status === 'completed') return
+    setHintBusy(true)
+    setError('')
+    try {
+      const payload = await api(`/api/sessions/${session.id}/hint`, { method: 'POST', body: '{}' })
+      setSession(payload.session)
+      setLastHint(payload.hint)
+      setTerminal((lines) => [...lines, { type: 'hint', text: `[Hint -${payload.cost}] ${payload.hint}` }])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setHintBusy(false)
+    }
+  }
+
+  useEffect(() => {
+    if (session.status === 'completed' && !report) loadReport()
+  }, [session.status])
 
   const recentNarrative = session.events.filter((event) => event.kind !== 'tool').slice(-6)
   const progress = Math.round((session.completed_objectives.length / scenario.objectives.length) * 100)
@@ -151,12 +225,15 @@ function Game({ scenario, session, setSession, onExit }) {
         <div className="game-status">
           <span className={`status-dot ${session.status}`}></span>
           {session.status === 'completed' ? '已完成' : '进行中'}
+          <small>SCORE {session.score}</small>
           <small>{session.id.slice(0, 8)}</small>
         </div>
         <button className="ghost compact" onClick={onExit}>新战役</button>
       </header>
 
-      <section className="game-grid">
+      <MetricStrip session={session} />
+
+      <section className="game-grid learning-grid">
         <aside className="story-panel panel">
           <p className="panel-label">MISSION BRIEF</p>
           <h2>{scenario.name}</h2>
@@ -169,6 +246,12 @@ function Game({ scenario, session, setSession, onExit }) {
             <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
           </div>
           <ObjectiveList scenario={scenario} session={session} />
+          <div className="hint-block">
+            <button className="hint-button" disabled={hintBusy || session.status === 'completed'} onClick={requestHint}>
+              {hintBusy ? '获取中...' : '请求 Hint · -10 分'}
+            </button>
+            {lastHint && <p>{lastHint}</p>}
+          </div>
         </aside>
 
         <section className="terminal-panel panel">
@@ -242,18 +325,21 @@ function Game({ scenario, session, setSession, onExit }) {
           <div className="agent-card">
             <span>当前 Agent</span>
             <strong>Security Analyst</strong>
-            <small>负责把你的意图映射成模拟动作，而不是向真实网络发包。</small>
+            <small>负责把自然语言和命令归一化为 Typed Action Intent，再交给模拟 Runtime；不会向真实网络发包。</small>
           </div>
         </aside>
       </section>
 
       {session.status === 'completed' && (
-        <section className="mission-complete" role="dialog" aria-modal="true">
+        <section className="mission-complete report-modal" role="dialog" aria-modal="true">
           <p>MISSION COMPLETE</p>
           <h2>{scenario.name}</h2>
           <code>{session.flag}</code>
-          <span>本局状态仍保留到容器结束。开启新战役会创建新的 Session。</span>
-          <button className="primary" onClick={onExit}>开始新战役</button>
+          <LearningReport report={report} />
+          <div className="complete-actions">
+            <button className="ghost" onClick={loadReport}>刷新报告</button>
+            <button className="primary" onClick={onExit}>开始新战役</button>
+          </div>
         </section>
       )}
     </main>
