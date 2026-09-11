@@ -23,7 +23,7 @@ runtime = GameRuntime(store)
 
 app = FastAPI(
     title="Paper Range API",
-    version="0.5.0",
+    version="0.6.0",
     description="Ephemeral narrative cyber-range simulator for AI-Agent.",
 )
 app.add_middleware(
@@ -37,7 +37,12 @@ app.add_middleware(
 
 @app.get("/health")
 def health() -> dict[str, object]:
-    return {"status": "ok", "sessions": store.count(), "persistence": "process-memory-only"}
+    return {
+        "status": "ok",
+        "version": app.version,
+        "sessions": store.count(),
+        "persistence": "process-memory-only",
+    }
 
 
 @app.get("/api/scenarios", response_model=list[ScenarioPublic])
