@@ -7,12 +7,22 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from .intent import IntentParser
-from .models import ActionIntent, ActionResponse, GameEvent, GameSessionView, HintResponse, LearningReport, PortService, Scenario
+from .models import (
+    ActionIntent,
+    ActionResponse,
+    GameEvent,
+    GameSessionView,
+    HintResponse,
+    LearningReport,
+    PortService,
+    Scenario,
+)
 from .scenarios import SCENARIOS
 from .themes import choose_theme
 
 
 HINT_COST = 10
+BROAD_RECON_COST = 3
 
 
 @dataclass
@@ -31,6 +41,10 @@ class GameSession:
     action_count: int = 0
     hint_count: int = 0
     invalid_action_count: int = 0
+    story_node: str = "recon"
+    story_branch: str | None = None
+    world_tags: list[str] = field(default_factory=lambda: ["ephemeral-world", "simulation-only"])
+    consequences: list[str] = field(default_factory=list)
     flag: str | None = None
     completed_at: datetime | None = None
 
@@ -55,6 +69,10 @@ class GameSession:
             action_count=self.action_count,
             hint_count=self.hint_count,
             invalid_action_count=self.invalid_action_count,
+            story_node=self.story_node,
+            story_branch=self.story_branch,
+            world_tags=list(self.world_tags),
+            consequences=list(self.consequences),
             flag=self.flag,
         )
 
@@ -120,6 +138,7 @@ class GameRuntime:
         handlers = {
             "scan_ports": lambda: self._scan_ports(session, intent.target),
             "inspect_web": lambda: self._inspect_web(session, intent.target),
+            "select_approach": lambda: self._select_approach(session, intent.option),
             "enumerate_paths": lambda: self._enumerate_paths(session, intent.target),
             "inspect_file": lambda: self._inspect_file(session, intent.resource),
             "ssh_access": lambda: self._ssh_access(session, intent),
@@ -155,6 +174,10 @@ class GameRuntime:
         )
         if session.invalid_action_count <= 1:
             strengths.append("行动路径较集中，较少出现与当前目标无关的尝试。")
+        if session.story_branch == "focused":
+            strengths.append("选择了定向调查分支，用较小的模拟暴露面推进证据链。")
+        elif session.story_branch == "broad":
+            next_steps.append("下一局尝试 focused/定向调查，对比低噪声调查与广覆盖枚举的收益差异。")
         if session.status == "completed":
             strengths.append("完成了侦察 → Web 初查 → 路径枚举 → 证据读取 → 模拟访问的完整证据链。")
         else:
@@ -177,6 +200,9 @@ class GameRuntime:
             invalid_action_count=session.invalid_action_count,
             completed_objectives=len(session.completed_objectives),
             total_objectives=len(session.scenario.objectives),
+            story_branch=session.story_branch,
+            world_tags=list(session.world_tags),
+            consequences=list(session.consequences),
             strengths=strengths,
             next_steps=next_steps,
             flag=session.flag,
@@ -188,6 +214,7 @@ class GameRuntime:
             return self._reject_external_target(session, resolved_target)
 
         session.discovered_services = list(session.scenario.services)
+        session.story_node = "web-investigation"
         self._complete_objective(session, "scan", 1, "目标完成：扫描开放端口。")
         lines = [f"SIMULATED NMAP {resolved_target}", "PORT      STATE  SERVICE       VERSION"]
         for service in session.scenario.services:
@@ -205,10 +232,49 @@ class GameRuntime:
 
         if session.scenario.web_observation not in session.clues:
             session.clues.append(session.scenario.web_observation)
+        session.story_node = "approach-decision"
         self._complete_objective(session, "web", 2, "目标完成：调查 Web 服务。")
         session.emit("narrative", "站点没有把答案直接摆在首页，但页面细节留下了下一段调查路径。")
-        session.emit("agent", "初步 Web 观察已加入证据栏。下一步可以枚举隐藏目录或路径。")
+        session.emit(
+            "agent",
+            "Story Graph 已进入调查方式节点：可选 focused（定向、低噪声）或 broad（覆盖更广、-3 分）。直接枚举时默认 focused。",
+        )
         return f"HTTP/1.1 200 OK\nserver: paper-range-sim\n\n{session.scenario.web_observation}"
+
+    def _select_approach(self, session: GameSession, option: str | None) -> str:
+        if "web" not in session.completed_objectives:
+            return self._blocked(session, "调查方式分支尚未解锁。先完成端口侦察和 Web 初查。")
+        if "enumerate" in session.completed_objectives:
+            return self._blocked(session, "隐藏路径已经枚举完成，当前世界分支已经固化，不能回滚选择。")
+        if option not in {"focused", "broad"}:
+            return self._invalid(session, "请选择 approach focused 或 approach broad。")
+        if session.story_branch is not None:
+            return self._blocked(session, f"本局已经选择 {session.story_branch} 分支，分支一旦写入 WorldState 就不再改写。")
+        return self._apply_story_branch(session, option, explicit=True)
+
+    def _apply_story_branch(self, session: GameSession, option: str, *, explicit: bool) -> str:
+        session.story_branch = option
+        session.story_node = "path-enumeration"
+
+        if option == "focused":
+            self._append_unique(session.world_tags, "low-noise-recon")
+            consequence = (
+                "你沿 Web 线索做定向调查，模拟暴露面保持较低。"
+                if explicit
+                else "你没有显式选择调查方式，Agent 默认采用 focused 定向调查，保持较低模拟暴露面。"
+            )
+            self._append_unique(session.consequences, consequence)
+            session.emit("narrative", consequence)
+            session.emit("agent", "focused 分支只会优先暴露高置信度证据路径。")
+            return f"STORY BRANCH LOCKED: focused\n{consequence}"
+
+        self._append_unique(session.world_tags, "noisy-enumeration")
+        consequence = "你选择广覆盖枚举，得到更多路径情报，但制造了更高的模拟噪声。"
+        self._append_unique(session.consequences, consequence)
+        session.score = max(0, session.score - BROAD_RECON_COST)
+        session.emit("narrative", consequence)
+        session.emit("agent", f"broad 分支已写入 WorldState（-{BROAD_RECON_COST} 分），后续会显示全部发现路径。")
+        return f"STORY BRANCH LOCKED: broad\n{consequence}\nscore -{BROAD_RECON_COST}"
 
     def _enumerate_paths(self, session: GameSession, target: str | None) -> str:
         resolved_target = target or session.scenario.target_ip
@@ -217,14 +283,29 @@ class GameRuntime:
         if "web" not in session.completed_objectives:
             return self._blocked(session, "先完成 Web 初查，再做路径枚举。这样线索链会更清晰。")
 
+        if session.story_branch is None:
+            self._apply_story_branch(session, "focused", explicit=False)
+
         clue = f"发现证据文件候选：{session.scenario.evidence_path}"
         if clue not in session.clues:
             session.clues.append(clue)
+        session.story_node = "evidence-review"
         self._complete_objective(session, "enumerate", 3, "目标完成：枚举隐藏路径。")
-        lines = [f"SIMULATED PATH ENUM {resolved_target}", "STATUS  PATH"]
-        for path in session.scenario.hidden_paths:
+
+        if session.story_branch == "focused":
+            visible_paths = [session.scenario.evidence_path]
+            header = "SIMULATED FOCUSED PATH ENUM"
+        else:
+            visible_paths = list(session.scenario.hidden_paths)
+            header = "SIMULATED BROAD PATH ENUM"
+
+        lines = [f"{header} {resolved_target}", "STATUS  PATH"]
+        for path in visible_paths:
             lines.append(f"200     {path}")
-        session.emit("agent", f"路径枚举完成。最值得读取的证据候选是 {session.scenario.evidence_path}。")
+        session.emit(
+            "agent",
+            f"路径枚举完成。分支={session.story_branch}；最值得读取的证据候选是 {session.scenario.evidence_path}。",
+        )
         return "\n".join(lines)
 
     def _inspect_file(self, session: GameSession, resource: str | None) -> str:
@@ -241,6 +322,7 @@ class GameRuntime:
 
         if session.scenario.evidence_text not in session.clues:
             session.clues.append(session.scenario.evidence_text)
+        session.story_node = "access-validation"
         self._complete_objective(session, "evidence", 4, "目标完成：读取证据文件。")
         session.emit("narrative", "文件内容被解析后，一条只属于当前模拟世界的训练身份浮出水面。")
         session.emit("agent", "凭据证据已加入线索栏。现在可以验证模拟 SSH 访问。")
@@ -276,6 +358,7 @@ class GameRuntime:
 
         self._complete_objective(session, "access", len(session.scenario.objectives), "目标完成：建立模拟访问。")
         session.status = "completed"
+        session.story_node = "complete"
         session.flag = session.scenario.flag
         session.completed_at = datetime.now(UTC)
         session.emit("narrative", "主机欢迎语闪过，封存事故的证据目录出现在屏幕上。战役结束。")
@@ -289,9 +372,14 @@ class GameRuntime:
 
     @staticmethod
     def _status(session: GameSession) -> str:
+        tags = ",".join(session.world_tags) if session.world_tags else "-"
         return (
             f"scenario={session.scenario.name}\n"
             f"status={session.status}\n"
+            f"story_node={session.story_node}\n"
+            f"story_branch={session.story_branch or 'unselected'}\n"
+            f"world_tags={tags}\n"
+            f"consequences={len(session.consequences)}\n"
             f"objectives={len(session.completed_objectives)}/{len(session.scenario.objectives)}\n"
             f"score={session.score}\n"
             f"actions={session.action_count}\n"
@@ -305,6 +393,8 @@ class GameRuntime:
             "可以直接用自然语言，也可以输入以下模拟命令：\n"
             f"nmap -p- {session.scenario.target_ip}\n"
             f"curl http://{session.scenario.target_ip}\n"
+            "approach focused  # 定向、低噪声\n"
+            "approach broad    # 广覆盖、-3 分\n"
             f"dirsearch -u http://{session.scenario.target_ip}\n"
             "cat /你从枚举结果中发现的证据文件\n"
             "ssh <你从证据中发现的用户>@<目标>\n"
@@ -315,7 +405,7 @@ class GameRuntime:
     def _unknown(self, session: GameSession, command: str) -> str:
         return self._invalid(
             session,
-            f"我理解你想执行“{command}”，但当前模拟器只实现端口扫描、Web 初查、路径枚举、证据读取和模拟 SSH 访问。输入 help 查看动作。",
+            f"我理解你想执行“{command}”，但当前模拟器只实现端口扫描、Web 初查、调查分支选择、路径枚举、证据读取和模拟 SSH 访问。输入 help 查看动作。",
         )
 
     @staticmethod
@@ -324,6 +414,11 @@ class GameRuntime:
             session.completed_objectives.append(objective_id)
             session.emit("reward", event)
         session.objective_index = max(session.objective_index, next_index)
+
+    @staticmethod
+    def _append_unique(items: list[str], value: str) -> None:
+        if value not in items:
+            items.append(value)
 
     @staticmethod
     def _blocked(session: GameSession, text: str) -> str:
