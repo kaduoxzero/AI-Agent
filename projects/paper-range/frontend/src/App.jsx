@@ -16,8 +16,10 @@ const api = async (path, options = {}) => {
 const STORY_STEPS = [
   { id: 'recon', label: 'RECON', title: '端口侦察' },
   { id: 'web-investigation', label: 'WEB', title: 'Web 初查' },
-  { id: 'approach-decision', label: 'BRANCH', title: '调查方式' },
+  { id: 'approach-decision', label: 'BRANCH 1', title: '调查方式' },
   { id: 'path-enumeration', label: 'PATH', title: '路径枚举' },
+  { id: 'evidence-strategy', label: 'BRANCH 2', title: '证据策略' },
+  { id: 'correlation-work', label: 'CORRELATE', title: '双重关联' },
   { id: 'evidence-review', label: 'EVIDENCE', title: '证据读取' },
   { id: 'access-validation', label: 'ACCESS', title: '访问验证' },
   { id: 'complete', label: 'DONE', title: '战役完成' },
@@ -47,7 +49,12 @@ function Landing({ scenarios, onStart, loading }) {
           不是干巴巴的问答，而是一场会记住你本局行动、会改变世界状态，并在结束后告诉你哪里还能更好的推演。
         </p>
         <div className="hero-actions">
-          <button className="primary" disabled={loading} onClick={() => onStart(selected)}>
+          <button
+            className="primary"
+            data-testid="start-operation"
+            disabled={loading}
+            onClick={() => onStart(selected)}
+          >
             {selected ? '进入所选战役' : '随机进入战役'}
           </button>
           {selected && (
@@ -73,6 +80,7 @@ function Landing({ scenarios, onStart, loading }) {
             return (
               <button
                 key={scenario.id}
+                data-testid={`scenario-${scenario.id}`}
                 className={`scenario-row ${active ? 'active' : ''}`}
                 onClick={() => setSelected(active ? null : scenario.id)}
               >
@@ -128,23 +136,37 @@ function MetricStrip({ session }) {
 function StoryGraph({ session, busy, onChoose }) {
   const currentIndex = Math.max(0, STORY_STEPS.findIndex((step) => step.id === session.story_node))
   const branchReady = session.story_node === 'approach-decision' && !session.story_branch
+  const evidenceReady = session.story_node === 'evidence-strategy' && !session.evidence_strategy
+  const correlateActive = session.evidence_strategy === 'correlate'
+  const hasLogQuery = session.investigation_checks.includes('log-query')
+  const hasAssetMap = session.investigation_checks.includes('asset-map')
 
   return (
-    <section className="story-graph-card" aria-label="Story Graph">
+    <section className="story-graph-card" aria-label="Story Graph" data-testid="story-graph">
       <div className="story-graph-heading">
         <div>
-          <span>STORY GRAPH</span>
-          <strong>{session.story_node}</strong>
+          <span>STORY GRAPH V2</span>
+          <strong data-testid="story-node-value">{session.story_node}</strong>
         </div>
-        <em>{session.story_branch ? `LOCKED · ${session.story_branch.toUpperCase()}` : 'UNLOCKED'}</em>
+        <div className="story-locks">
+          <em>{session.story_branch ? `RECON · ${session.story_branch.toUpperCase()}` : 'RECON · OPEN'}</em>
+          <em>{session.evidence_strategy ? `EVIDENCE · ${session.evidence_strategy.toUpperCase()}` : 'EVIDENCE · OPEN'}</em>
+        </div>
       </div>
 
       <div className="story-path">
         {STORY_STEPS.map((step, index) => {
-          const state = index < currentIndex ? 'complete' : index === currentIndex ? 'active' : 'pending'
+          const skipped = step.id === 'correlation-work' && session.evidence_strategy === 'direct'
+          const state = skipped
+            ? 'skipped'
+            : index < currentIndex
+              ? 'complete'
+              : index === currentIndex
+                ? 'active'
+                : 'pending'
           return (
-            <div className={`story-node ${state}`} key={step.id}>
-              <span className="story-node-dot">{index < currentIndex ? '✓' : index + 1}</span>
+            <div className={`story-node ${state}`} key={step.id} data-testid={`story-step-${step.id}`}>
+              <span className="story-node-dot">{skipped ? '—' : index < currentIndex ? '✓' : index + 1}</span>
               <div>
                 <small>{step.label}</small>
                 <strong>{step.title}</strong>
@@ -155,15 +177,15 @@ function StoryGraph({ session, busy, onChoose }) {
       </div>
 
       {branchReady && (
-        <div className="branch-choice">
-          <p>调查方式节点已解锁。选择会写入当前 WorldState，本局不可回滚。</p>
+        <div className="branch-choice" data-testid="approach-choice">
+          <p>第一层分支：调查方式会写入当前 WorldState，本局不可回滚。</p>
           <div>
-            <button disabled={busy} onClick={() => onChoose('approach focused')}>
+            <button data-testid="approach-focused" disabled={busy} onClick={() => onChoose('approach focused')}>
               <span>FOCUSED</span>
               <strong>定向调查</strong>
               <small>低噪声 · 0 分损耗</small>
             </button>
-            <button disabled={busy} onClick={() => onChoose('approach broad')}>
+            <button data-testid="approach-broad" disabled={busy} onClick={() => onChoose('approach broad')}>
               <span>BROAD</span>
               <strong>广覆盖调查</strong>
               <small>更多路径 · -3 分</small>
@@ -172,10 +194,61 @@ function StoryGraph({ session, busy, onChoose }) {
         </div>
       )}
 
+      {evidenceReady && (
+        <div className="branch-choice evidence-choice" data-testid="evidence-choice">
+          <p>第二层分支：direct 直接验证候选证据；correlate 必须完成日志查询 + 资产关系映射。</p>
+          <div>
+            <button data-testid="evidence-direct" disabled={busy} onClick={() => onChoose('evidence direct')}>
+              <span>DIRECT</span>
+              <strong>直接验证</strong>
+              <small>快速推进 · 跳过关联层</small>
+            </button>
+            <button data-testid="evidence-correlate" disabled={busy} onClick={() => onChoose('evidence correlate')}>
+              <span>CORRELATE</span>
+              <strong>关联证据</strong>
+              <small>日志 + 资产双重检查</small>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {correlateActive && (
+        <div className="correlation-checks" data-testid="correlation-checks">
+          <div className={hasLogQuery ? 'done' : ''}>
+            <span>{hasLogQuery ? '✓' : '1'}</span>
+            <div>
+              <strong>SIMULATED LOG QUERY</strong>
+              <small>把路径事件关联到同一模拟时间线。</small>
+            </div>
+            <button data-testid="correlation-log" disabled={busy || hasLogQuery} onClick={() => onChoose('grep incident /var/log/paper-range/events.log')}>
+              {hasLogQuery ? '完成' : '执行'}
+            </button>
+          </div>
+          <div className={hasAssetMap ? 'done' : ''}>
+            <span>{hasAssetMap ? '✓' : '2'}</span>
+            <div>
+              <strong>SIMULATED ASSET MAP</strong>
+              <small>把发现服务组织成当前场景资产关系。</small>
+            </div>
+            <button data-testid="correlation-asset" disabled={busy || hasAssetMap} onClick={() => onChoose('asset-map')}>
+              {hasAssetMap ? '完成' : '执行'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="world-state-grid">
         <div>
+          <span>INVESTIGATION CHECKS</span>
+          <div className="tag-list" data-testid="investigation-checks">
+            {session.investigation_checks.length === 0
+              ? <code>none</code>
+              : session.investigation_checks.map((check) => <code key={check}>{check}</code>)}
+          </div>
+        </div>
+        <div>
           <span>WORLD TAGS</span>
-          <div className="tag-list">
+          <div className="tag-list" data-testid="world-tags">
             {session.world_tags.map((tag) => <code key={tag}>{tag}</code>)}
           </div>
         </div>
@@ -184,7 +257,7 @@ function StoryGraph({ session, busy, onChoose }) {
           {session.consequences.length === 0 ? (
             <p>尚未产生不可回滚后果。</p>
           ) : (
-            <ul>{session.consequences.slice(-3).map((item) => <li key={item}>{item}</li>)}</ul>
+            <ul>{session.consequences.slice(-4).map((item) => <li key={item}>{item}</li>)}</ul>
           )}
         </div>
       </div>
@@ -229,19 +302,22 @@ function Game({ scenario, session, setSession, onExit }) {
   )
 
   const branchReady = session.story_node === 'approach-decision' && !session.story_branch
+  const evidenceReady = session.story_node === 'evidence-strategy' && !session.evidence_strategy
   const quickCommands = useMemo(() => {
     const commands = [
       `nmap -p- ${session.target_ip}`,
       `curl http://${session.target_ip}`,
     ]
-    if (branchReady) {
-      commands.push('approach focused', 'approach broad')
-    }
+    if (branchReady) commands.push('approach focused', 'approach broad')
     commands.push(`dirsearch -u http://${session.target_ip}`)
+    if (evidenceReady) commands.push('evidence direct', 'evidence correlate')
+    if (session.evidence_strategy === 'correlate') {
+      commands.push('asset-map', 'grep incident /var/log/paper-range/events.log')
+    }
     commands.push(`ssh ${scenario.ssh_user}@${session.target_ip}`)
     commands.push('status')
     return commands
-  }, [branchReady, scenario.ssh_user, session.target_ip])
+  }, [branchReady, evidenceReady, scenario.ssh_user, session.evidence_strategy, session.target_ip])
 
   const mergeResponseSession = (nextSession) => {
     setSession((current) => {
@@ -355,7 +431,7 @@ function Game({ scenario, session, setSession, onExit }) {
   const progress = Math.round((session.completed_objectives.length / scenario.objectives.length) * 100)
 
   return (
-    <main className={`game-shell theme-${session.theme_id}`}>
+    <main className={`game-shell theme-${session.theme_id}`} data-testid="game-shell">
       <header className="game-header">
         <div className="game-brand">
           <div className="brand-mark small">AG</div>
@@ -367,7 +443,7 @@ function Game({ scenario, session, setSession, onExit }) {
         <div className="game-status">
           <span className={`status-dot ${session.status}`}></span>
           {session.status === 'completed' ? '已完成' : '进行中'}
-          <span className={`stream-pill ${streamState}`}>SSE {STREAM_LABELS[streamState] || streamState}</span>
+          <span className={`stream-pill ${streamState}`} data-testid="stream-state">SSE {STREAM_LABELS[streamState] || streamState}</span>
           <small>SCORE {session.score}</small>
           <small>{session.id.slice(0, 8)}</small>
         </div>
@@ -408,7 +484,7 @@ function Game({ scenario, session, setSession, onExit }) {
             <span>SIMULATED TERMINAL · {session.target_ip}</span>
           </div>
 
-          <div className="terminal-log" aria-live="polite">
+          <div className="terminal-log" aria-live="polite" data-testid="terminal-log">
             {terminal.map((line, index) => (
               <pre key={`${line.type}-${line.eventSeq || index}`} className={`line-${line.type}`}>{line.text}</pre>
             ))}
@@ -432,13 +508,18 @@ function Game({ scenario, session, setSession, onExit }) {
           >
             <span>›</span>
             <input
+              data-testid="command-input"
               value={input}
               disabled={busy || session.status === 'completed'}
               onChange={(event) => setInput(event.target.value)}
               placeholder="输入自然语言或模拟命令，例如：我先扫描所有 TCP 端口"
               autoFocus
             />
-            <button className="primary compact" disabled={busy || !input.trim() || session.status === 'completed'}>
+            <button
+              className="primary compact"
+              data-testid="execute-command"
+              disabled={busy || !input.trim() || session.status === 'completed'}
+            >
               执行
             </button>
           </form>
@@ -477,7 +558,7 @@ function Game({ scenario, session, setSession, onExit }) {
           <div className="agent-card">
             <span>当前 Agent</span>
             <strong>Security Analyst</strong>
-            <small>自然语言和命令先归一化为 Typed Action Intent；SSE 只推送模拟世界事件，不会向真实网络发包。</small>
+            <small>自然语言和命令先归一化为 Typed Action Intent；日志查询、资产映射和 SSE 都只读取当前虚构 WorldState，不会向真实网络发包。</small>
           </div>
         </aside>
       </section>
