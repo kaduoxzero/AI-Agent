@@ -1,0 +1,56 @@
+name: Paper Range CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+    paths:
+      - 'projects/paper-range/**'
+      - '.github/workflows/paper-range.yml'
+  pull_request:
+    paths:
+      - 'projects/paper-range/**'
+      - '.github/workflows/paper-range.yml'
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: projects/paper-range/backend/pyproject.toml
+
+      - name: Backend tests
+        working-directory: projects/paper-range/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+          pytest
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: projects/paper-range/frontend/package.json
+
+      - name: Frontend build
+        working-directory: projects/paper-range/frontend
+        run: |
+          npm install
+          npm run build
+
+      - name: Validate Compose
+        working-directory: projects/paper-range
+        run: docker compose config
+
+      - name: Build containers
+        working-directory: projects/paper-range
+        run: docker compose build
