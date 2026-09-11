@@ -10,12 +10,17 @@ ActionKind = Literal[
     "inspect_web",
     "select_approach",
     "enumerate_paths",
+    "select_evidence_strategy",
+    "query_logs",
+    "trace_asset",
     "inspect_file",
     "ssh_access",
     "status",
     "help",
     "unknown",
 ]
+
+InvestigationOption = Literal["focused", "broad", "direct", "correlate"]
 
 
 class PortService(BaseModel):
@@ -77,7 +82,7 @@ class ActionIntent(BaseModel):
     source: Literal["command", "natural_language", "system"]
     target: str | None = None
     resource: str | None = None
-    option: Literal["focused", "broad"] | None = None
+    option: InvestigationOption | None = None
 
 
 class GameEvent(BaseModel):
@@ -105,6 +110,8 @@ class GameSessionView(BaseModel):
     invalid_action_count: int
     story_node: str
     story_branch: Literal["focused", "broad"] | None = None
+    evidence_strategy: Literal["direct", "correlate"] | None = None
+    investigation_checks: list[str]
     world_tags: list[str]
     consequences: list[str]
     flag: str | None = None
@@ -134,6 +141,8 @@ class LearningReport(BaseModel):
     completed_objectives: int
     total_objectives: int
     story_branch: Literal["focused", "broad"] | None = None
+    evidence_strategy: Literal["direct", "correlate"] | None = None
+    investigation_checks: list[str]
     world_tags: list[str]
     consequences: list[str]
     strengths: list[str]
