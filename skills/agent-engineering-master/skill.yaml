@@ -8,10 +8,11 @@ capabilities:
   - project_state_bootstrap
   - dynamic_skill_routing
   - verification_gate
+  - simulation_skill_routing
 
 trigger:
   keywords:
-    - "agent design build debug eval security optimize productionize"
+    - "agent design build debug eval security optimize productionize paper range cyber range 纸上靶场 simulation"
 
 input:
   required:

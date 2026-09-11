@@ -48,6 +48,10 @@ skills:
     status: stable
     category: design
 
+  agent-paper-range-designer:
+    status: stable
+    category: simulation
+
   agent-eval-hardening:
     status: stable
     category: evaluation

@@ -1,17 +1,18 @@
 name: agent-project-orchestrator
 version: 1.2.0
 category: orchestration
-description: "Classifies a task and routes it to the right specialist workflow, including enterprise handover/takeover"
+description: "Classifies a task and routes it to the right specialist workflow, including enterprise handover/takeover and Paper Range simulation design"
 
 capabilities:
   - task_classification
   - workflow_routing
   - guided_mode_detection
   - handover_routing
+  - paper_range_routing
 
 trigger:
   keywords:
-    - "route orchestrate task type unclear which skill handover takeover 交接 接手 移交"
+    - "route orchestrate task type unclear which skill handover takeover 交接 接手 移交 paper range cyber range 纸上靶场 剧情靶场 simulation"
 
 input:
   required:
@@ -25,5 +26,6 @@ risk:
 
 dependencies:
   - agent-enterprise-handover
+  - agent-paper-range-designer
 
 status: stable
