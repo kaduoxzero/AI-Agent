@@ -1,0 +1,21 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    expose:
+      - "8000"
+    environment:
+      PAPER_RANGE_ENV: container
+    restart: "no"
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    restart: "no"
+
+# Deliberately no volumes and no external database.
+# Session/world memory lives only in the backend process and disappears with the container.
