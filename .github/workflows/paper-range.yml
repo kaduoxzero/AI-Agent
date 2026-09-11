@@ -54,3 +54,36 @@ jobs:
       - name: Build containers
         working-directory: projects/paper-range
         run: docker compose build
+
+      - name: Install Chromium for E2E
+        working-directory: projects/paper-range/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Paper Range
+        working-directory: projects/paper-range
+        run: |
+          docker compose up -d
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:8080/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+
+      - name: Browser E2E smoke
+        working-directory: projects/paper-range/frontend
+        env:
+          PAPER_RANGE_BASE_URL: http://127.0.0.1:8080
+        run: npm run test:e2e
+
+      - name: Compose logs on failure
+        if: failure()
+        working-directory: projects/paper-range
+        run: docker compose logs
+
+      - name: Stop Paper Range
+        if: always()
+        working-directory: projects/paper-range
+        run: docker compose down -v
