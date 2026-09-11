@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const api = async (path, options = {}) => {
   const response = await fetch(path, {
@@ -13,7 +13,26 @@ const api = async (path, options = {}) => {
   return response.json()
 }
 
+const STORY_STEPS = [
+  { id: 'recon', label: 'RECON', title: '端口侦察' },
+  { id: 'web-investigation', label: 'WEB', title: 'Web 初查' },
+  { id: 'approach-decision', label: 'BRANCH', title: '调查方式' },
+  { id: 'path-enumeration', label: 'PATH', title: '路径枚举' },
+  { id: 'evidence-review', label: 'EVIDENCE', title: '证据读取' },
+  { id: 'access-validation', label: 'ACCESS', title: '访问验证' },
+  { id: 'complete', label: 'DONE', title: '战役完成' },
+]
+
+const STREAM_LABELS = {
+  connecting: 'CONNECTING',
+  live: 'LIVE',
+  reconnecting: 'RECONNECTING',
+  complete: 'COMPLETE',
+  closed: 'CLOSED',
+}
+
 const scenarioNumber = (index) => String(index + 1).padStart(2, '0')
+const maxEventSeq = (events) => events.reduce((max, event) => Math.max(max, event.seq || 0), 0)
 
 function Landing({ scenarios, onStart, loading }) {
   const [selected, setSelected] = useState(null)
@@ -106,6 +125,73 @@ function MetricStrip({ session }) {
   )
 }
 
+function StoryGraph({ session, busy, onChoose }) {
+  const currentIndex = Math.max(0, STORY_STEPS.findIndex((step) => step.id === session.story_node))
+  const branchReady = session.story_node === 'approach-decision' && !session.story_branch
+
+  return (
+    <section className="story-graph-card" aria-label="Story Graph">
+      <div className="story-graph-heading">
+        <div>
+          <span>STORY GRAPH</span>
+          <strong>{session.story_node}</strong>
+        </div>
+        <em>{session.story_branch ? `LOCKED · ${session.story_branch.toUpperCase()}` : 'UNLOCKED'}</em>
+      </div>
+
+      <div className="story-path">
+        {STORY_STEPS.map((step, index) => {
+          const state = index < currentIndex ? 'complete' : index === currentIndex ? 'active' : 'pending'
+          return (
+            <div className={`story-node ${state}`} key={step.id}>
+              <span className="story-node-dot">{index < currentIndex ? '✓' : index + 1}</span>
+              <div>
+                <small>{step.label}</small>
+                <strong>{step.title}</strong>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {branchReady && (
+        <div className="branch-choice">
+          <p>调查方式节点已解锁。选择会写入当前 WorldState，本局不可回滚。</p>
+          <div>
+            <button disabled={busy} onClick={() => onChoose('approach focused')}>
+              <span>FOCUSED</span>
+              <strong>定向调查</strong>
+              <small>低噪声 · 0 分损耗</small>
+            </button>
+            <button disabled={busy} onClick={() => onChoose('approach broad')}>
+              <span>BROAD</span>
+              <strong>广覆盖调查</strong>
+              <small>更多路径 · -3 分</small>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="world-state-grid">
+        <div>
+          <span>WORLD TAGS</span>
+          <div className="tag-list">
+            {session.world_tags.map((tag) => <code key={tag}>{tag}</code>)}
+          </div>
+        </div>
+        <div>
+          <span>CONSEQUENCES</span>
+          {session.consequences.length === 0 ? (
+            <p>尚未产生不可回滚后果。</p>
+          ) : (
+            <ul>{session.consequences.slice(-3).map((item) => <li key={item}>{item}</li>)}</ul>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function LearningReport({ report }) {
   if (!report) return <div className="report-loading">正在生成学习报告...</div>
   return (
@@ -136,19 +222,33 @@ function Game({ scenario, session, setSession, onExit }) {
   const [error, setError] = useState('')
   const [lastHint, setLastHint] = useState('')
   const [report, setReport] = useState(null)
+  const [streamState, setStreamState] = useState('connecting')
+  const streamSeq = useRef(maxEventSeq(session.events))
   const [terminal, setTerminal] = useState(() =>
-    session.events.map((event) => ({ type: event.kind, text: event.text })),
+    session.events.map((event) => ({ type: event.kind, text: event.text, eventSeq: event.seq })),
   )
 
-  const quickCommands = useMemo(
-    () => [
+  const branchReady = session.story_node === 'approach-decision' && !session.story_branch
+  const quickCommands = useMemo(() => {
+    const commands = [
       `nmap -p- ${session.target_ip}`,
       `curl http://${session.target_ip}`,
-      `ssh ${scenario.ssh_user}@${session.target_ip}`,
-      'status',
-    ],
-    [scenario.ssh_user, session.target_ip],
-  )
+    ]
+    if (branchReady) {
+      commands.push('approach focused', 'approach broad')
+    }
+    commands.push(`dirsearch -u http://${session.target_ip}`)
+    commands.push(`ssh ${scenario.ssh_user}@${session.target_ip}`)
+    commands.push('status')
+    return commands
+  }, [branchReady, scenario.ssh_user, session.target_ip])
+
+  const mergeResponseSession = (nextSession) => {
+    setSession((current) => {
+      if (!current || current.id !== nextSession.id) return nextSession
+      return { ...nextSession, events: current.events }
+    })
+  }
 
   const loadReport = async () => {
     try {
@@ -171,7 +271,7 @@ function Game({ scenario, session, setSession, onExit }) {
         method: 'POST',
         body: JSON.stringify({ input: value }),
       })
-      setSession(payload.session)
+      mergeResponseSession(payload.session)
       setTerminal((lines) => [
         ...lines,
         { type: 'intent', text: `[intent:${payload.intent.kind} source:${payload.intent.source}]` },
@@ -195,7 +295,7 @@ function Game({ scenario, session, setSession, onExit }) {
     setError('')
     try {
       const payload = await api(`/api/sessions/${session.id}/hint`, { method: 'POST', body: '{}' })
-      setSession(payload.session)
+      mergeResponseSession(payload.session)
       setLastHint(payload.hint)
       setTerminal((lines) => [...lines, { type: 'hint', text: `[Hint -${payload.cost}] ${payload.hint}` }])
     } catch (err) {
@@ -204,6 +304,48 @@ function Game({ scenario, session, setSession, onExit }) {
       setHintBusy(false)
     }
   }
+
+  useEffect(() => {
+    streamSeq.current = maxEventSeq(session.events)
+    const source = new EventSource(`/api/sessions/${session.id}/events?after=${streamSeq.current}`)
+
+    source.onopen = () => setStreamState('live')
+    source.addEventListener('game_event', (message) => {
+      try {
+        const event = JSON.parse(message.data)
+        if (!event.seq || event.seq <= streamSeq.current) return
+        streamSeq.current = event.seq
+
+        setSession((current) => {
+          if (!current || current.id !== session.id) return current
+          if (current.events.some((item) => item.seq === event.seq)) return current
+          return { ...current, events: [...current.events, event] }
+        })
+
+        if (event.kind !== 'tool') {
+          setTerminal((lines) => {
+            if (lines.some((line) => line.eventSeq === event.seq)) return lines
+            return [...lines, { type: event.kind, text: `[LIVE #${event.seq}] ${event.text}`, eventSeq: event.seq }]
+          })
+        }
+      } catch {
+        setStreamState('reconnecting')
+      }
+    })
+    source.addEventListener('session_complete', () => {
+      setStreamState('complete')
+      source.close()
+    })
+    source.addEventListener('session_end', () => {
+      setStreamState('closed')
+      source.close()
+    })
+    source.onerror = () => {
+      setStreamState(source.readyState === EventSource.CLOSED ? 'closed' : 'reconnecting')
+    }
+
+    return () => source.close()
+  }, [session.id, setSession])
 
   useEffect(() => {
     if (session.status === 'completed' && !report) loadReport()
@@ -225,6 +367,7 @@ function Game({ scenario, session, setSession, onExit }) {
         <div className="game-status">
           <span className={`status-dot ${session.status}`}></span>
           {session.status === 'completed' ? '已完成' : '进行中'}
+          <span className={`stream-pill ${streamState}`}>SSE {STREAM_LABELS[streamState] || streamState}</span>
           <small>SCORE {session.score}</small>
           <small>{session.id.slice(0, 8)}</small>
         </div>
@@ -245,6 +388,7 @@ function Game({ scenario, session, setSession, onExit }) {
             </div>
             <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
           </div>
+          <StoryGraph session={session} busy={busy} onChoose={execute} />
           <ObjectiveList scenario={scenario} session={session} />
           <div className="hint-block">
             <button className="hint-button" disabled={hintBusy || session.status === 'completed'} onClick={requestHint}>
@@ -266,7 +410,7 @@ function Game({ scenario, session, setSession, onExit }) {
 
           <div className="terminal-log" aria-live="polite">
             {terminal.map((line, index) => (
-              <pre key={`${line.type}-${index}`} className={`line-${line.type}`}>{line.text}</pre>
+              <pre key={`${line.type}-${line.eventSeq || index}`} className={`line-${line.type}`}>{line.text}</pre>
             ))}
             {busy && <pre className="line-agent">[Agent] 正在解释你的行动并更新世界状态...</pre>}
           </div>
@@ -303,6 +447,14 @@ function Game({ scenario, session, setSession, onExit }) {
 
         <aside className="intel-panel panel">
           <p className="panel-label">LIVE INTEL</p>
+          <div className="live-stream-card">
+            <span className={`stream-beacon ${streamState}`}></span>
+            <div>
+              <small>EVENT STREAM</small>
+              <strong>{STREAM_LABELS[streamState] || streamState}</strong>
+            </div>
+            <code>#{streamSeq.current}</code>
+          </div>
           <div className="intel-section">
             <h3>已发现线索</h3>
             {session.clues.length === 0 ? (
@@ -312,7 +464,7 @@ function Game({ scenario, session, setSession, onExit }) {
             )}
           </div>
           <div className="intel-section">
-            <h3>场景事件</h3>
+            <h3>实时场景事件</h3>
             <div className="event-stream">
               {recentNarrative.map((event) => (
                 <div key={event.seq} className={`event ${event.kind}`}>
@@ -325,7 +477,7 @@ function Game({ scenario, session, setSession, onExit }) {
           <div className="agent-card">
             <span>当前 Agent</span>
             <strong>Security Analyst</strong>
-            <small>负责把自然语言和命令归一化为 Typed Action Intent，再交给模拟 Runtime；不会向真实网络发包。</small>
+            <small>自然语言和命令先归一化为 Typed Action Intent；SSE 只推送模拟世界事件，不会向真实网络发包。</small>
           </div>
         </aside>
       </section>

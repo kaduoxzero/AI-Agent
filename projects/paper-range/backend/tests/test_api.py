@@ -65,3 +65,13 @@ def test_random_session_works_across_six_scenarios() -> None:
         "orbital-relay",
         "night-freight",
     }
+
+
+def test_live_story_release_and_missing_event_stream() -> None:
+    openapi = client.get("/openapi.json")
+    assert openapi.status_code == 200
+    assert openapi.json()["info"]["version"] == "0.5.0"
+
+    missing = client.get("/api/sessions/not-a-session/events")
+    assert missing.status_code == 404
+    assert missing.json()["detail"] == "session not found"

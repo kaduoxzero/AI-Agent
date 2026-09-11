@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from .models import (
     ActionRequest,
@@ -14,6 +15,7 @@ from .models import (
 )
 from .runtime import GameRuntime, SessionStore
 from .scenarios import list_scenarios
+from .streaming import resolve_event_cursor, session_event_stream
 
 
 store = SessionStore()
@@ -21,7 +23,7 @@ runtime = GameRuntime(store)
 
 app = FastAPI(
     title="Paper Range API",
-    version="0.4.0",
+    version="0.5.0",
     description="Ephemeral narrative cyber-range simulator for AI-Agent.",
 )
 app.add_middleware(
@@ -60,6 +62,30 @@ def get_session(session_id: str) -> GameSessionView:
         return store.get(session_id).view()
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="session not found") from exc
+
+
+@app.get("/api/sessions/{session_id}/events")
+async def session_events(
+    session_id: str,
+    request: Request,
+    after: int = Query(default=0, ge=0),
+) -> StreamingResponse:
+    try:
+        store.get(session_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="session not found") from exc
+
+    cursor = resolve_event_cursor(after, request.headers.get("last-event-id"))
+    stream = session_event_stream(store, session_id, request, after=cursor)
+    return StreamingResponse(
+        stream,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.post("/api/sessions/{session_id}/actions", response_model=ActionResponse)
