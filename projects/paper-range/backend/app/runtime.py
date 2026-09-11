@@ -23,6 +23,7 @@ from .themes import choose_theme
 
 HINT_COST = 10
 BROAD_RECON_COST = 3
+CORRELATION_CHECKS = {"log-query", "asset-map"}
 
 
 @dataclass
@@ -43,6 +44,8 @@ class GameSession:
     invalid_action_count: int = 0
     story_node: str = "recon"
     story_branch: str | None = None
+    evidence_strategy: str | None = None
+    investigation_checks: list[str] = field(default_factory=list)
     world_tags: list[str] = field(default_factory=lambda: ["ephemeral-world", "simulation-only"])
     consequences: list[str] = field(default_factory=list)
     flag: str | None = None
@@ -71,6 +74,8 @@ class GameSession:
             invalid_action_count=self.invalid_action_count,
             story_node=self.story_node,
             story_branch=self.story_branch,
+            evidence_strategy=self.evidence_strategy,
+            investigation_checks=list(self.investigation_checks),
             world_tags=list(self.world_tags),
             consequences=list(self.consequences),
             flag=self.flag,
@@ -140,6 +145,9 @@ class GameRuntime:
             "inspect_web": lambda: self._inspect_web(session, intent.target),
             "select_approach": lambda: self._select_approach(session, intent.option),
             "enumerate_paths": lambda: self._enumerate_paths(session, intent.target),
+            "select_evidence_strategy": lambda: self._select_evidence_strategy(session, intent.option),
+            "query_logs": lambda: self._query_logs(session),
+            "trace_asset": lambda: self._trace_asset(session),
             "inspect_file": lambda: self._inspect_file(session, intent.resource),
             "ssh_access": lambda: self._ssh_access(session, intent),
             "status": lambda: self._status(session),
@@ -154,8 +162,16 @@ class GameRuntime:
         if session.status == "completed":
             return HintResponse(hint="战役已经完成。现在更适合查看学习报告。", cost=0, session=session.view())
 
-        hint_index = min(session.objective_index, len(session.scenario.hints) - 1)
-        hint = session.scenario.hints[hint_index]
+        if session.story_node == "evidence-strategy":
+            hint = "你可以直接验证证据，也可以选择 correlate：先完成模拟日志查询和资产关系映射，再读取证据。"
+        elif session.story_node == "correlation-work":
+            missing = CORRELATION_CHECKS.difference(session.investigation_checks)
+            labels = {"log-query": "日志查询", "asset-map": "资产关系映射"}
+            hint = "关联证据路线还缺少：" + "、".join(labels[item] for item in sorted(missing)) + "。"
+        else:
+            hint_index = min(session.objective_index, len(session.scenario.hints) - 1)
+            hint = session.scenario.hints[hint_index]
+
         session.hint_count += 1
         session.score = max(0, session.score - HINT_COST)
         session.emit("agent", f"Hint (-{HINT_COST}): {hint}")
@@ -178,8 +194,14 @@ class GameRuntime:
             strengths.append("选择了定向调查分支，用较小的模拟暴露面推进证据链。")
         elif session.story_branch == "broad":
             next_steps.append("下一局尝试 focused/定向调查，对比低噪声调查与广覆盖枚举的收益差异。")
+
+        if session.evidence_strategy == "correlate" and CORRELATION_CHECKS.issubset(session.investigation_checks):
+            strengths.append("完成日志与资产关系的双重关联后再读取证据，建立了更强的模拟证据置信度。")
+        elif session.evidence_strategy == "direct":
+            next_steps.append("下一局尝试 evidence correlate，体验日志查询 + 资产关系映射的条件调查路线。")
+
         if session.status == "completed":
-            strengths.append("完成了侦察 → Web 初查 → 路径枚举 → 证据读取 → 模拟访问的完整证据链。")
+            strengths.append("完成了侦察 → Web 初查 → 分支调查 → 证据验证 → 模拟访问的完整证据链。")
         else:
             next_steps.append("完成剩余目标后再生成最终学习结论。")
 
@@ -201,6 +223,8 @@ class GameRuntime:
             completed_objectives=len(session.completed_objectives),
             total_objectives=len(session.scenario.objectives),
             story_branch=session.story_branch,
+            evidence_strategy=session.evidence_strategy,
+            investigation_checks=list(session.investigation_checks),
             world_tags=list(session.world_tags),
             consequences=list(session.consequences),
             strengths=strengths,
@@ -245,7 +269,7 @@ class GameRuntime:
         if "web" not in session.completed_objectives:
             return self._blocked(session, "调查方式分支尚未解锁。先完成端口侦察和 Web 初查。")
         if "enumerate" in session.completed_objectives:
-            return self._blocked(session, "隐藏路径已经枚举完成，当前世界分支已经固化，不能回滚选择。")
+            return self._blocked(session, "隐藏路径已经枚举完成，当前调查方式分支已经固化，不能回滚选择。")
         if option not in {"focused", "broad"}:
             return self._invalid(session, "请选择 approach focused 或 approach broad。")
         if session.story_branch is not None:
@@ -289,7 +313,7 @@ class GameRuntime:
         clue = f"发现证据文件候选：{session.scenario.evidence_path}"
         if clue not in session.clues:
             session.clues.append(clue)
-        session.story_node = "evidence-review"
+        session.story_node = "evidence-strategy"
         self._complete_objective(session, "enumerate", 3, "目标完成：枚举隐藏路径。")
 
         if session.story_branch == "focused":
@@ -304,13 +328,111 @@ class GameRuntime:
             lines.append(f"200     {path}")
         session.emit(
             "agent",
-            f"路径枚举完成。分支={session.story_branch}；最值得读取的证据候选是 {session.scenario.evidence_path}。",
+            "路径枚举完成。Story Graph v2 已进入证据策略节点：direct 可直接读取候选证据；correlate 需要先完成日志查询与资产关系映射。",
         )
         return "\n".join(lines)
+
+    def _select_evidence_strategy(self, session: GameSession, option: str | None) -> str:
+        if "enumerate" not in session.completed_objectives:
+            return self._blocked(session, "证据策略节点尚未解锁。先完成路径枚举。")
+        if "evidence" in session.completed_objectives:
+            return self._blocked(session, "证据已经读取，本局证据策略已经固化，不能回滚。")
+        if option not in {"direct", "correlate"}:
+            return self._invalid(session, "请选择 evidence direct 或 evidence correlate。")
+        if session.evidence_strategy is not None:
+            return self._blocked(session, f"本局证据策略已经锁定为 {session.evidence_strategy}。")
+        return self._apply_evidence_strategy(session, option, explicit=True)
+
+    def _apply_evidence_strategy(self, session: GameSession, option: str, *, explicit: bool) -> str:
+        session.evidence_strategy = option
+        if option == "direct":
+            session.story_node = "evidence-review"
+            self._append_unique(session.world_tags, "direct-evidence-route")
+            consequence = (
+                "你选择直接验证候选证据，推进速度更快，但没有额外建立日志与资产关系的交叉置信度。"
+                if explicit
+                else "你没有显式选择证据策略，Agent 默认采用 direct 路线以保持旧版流程兼容。"
+            )
+            self._append_unique(session.consequences, consequence)
+            session.emit("narrative", consequence)
+            return f"EVIDENCE STRATEGY LOCKED: direct\n{consequence}"
+
+        session.story_node = "correlation-work"
+        self._append_unique(session.world_tags, "correlation-route")
+        consequence = "你选择关联证据路线；只有日志查询和资产关系映射都完成后，候选证据才会被放行。"
+        self._append_unique(session.consequences, consequence)
+        session.emit("narrative", consequence)
+        session.emit("agent", "需要完成两个 simulation-only 检查：log-query + asset-map。")
+        self._refresh_correlation_state(session)
+        return f"EVIDENCE STRATEGY LOCKED: correlate\n{consequence}"
+
+    def _query_logs(self, session: GameSession) -> str:
+        if "enumerate" not in session.completed_objectives:
+            return self._blocked(session, "当前还没有可关联的路径上下文。先完成路径枚举。")
+        if session.evidence_strategy == "direct":
+            return self._blocked(session, "本局已经锁定 direct 证据路线；日志关联不再作为当前路线的必要检查。")
+        if session.evidence_strategy is None:
+            self._apply_evidence_strategy(session, "correlate", explicit=False)
+
+        self._append_unique(session.investigation_checks, "log-query")
+        self._append_unique(session.world_tags, "logs-correlated")
+        clue = f"模拟日志关联确认：请求轨迹与候选证据 {session.scenario.evidence_path} 属于同一训练事件链。"
+        self._append_unique(session.clues, clue)
+        session.emit("agent", "日志查询完成：已把 Web/路径事件和候选证据关联到同一模拟时间线。")
+        self._refresh_correlation_state(session)
+        return (
+            "SIMULATED LOG QUERY\n"
+            f"host={session.scenario.target_ip}\n"
+            "source=/var/log/paper-range/events.log\n"
+            f"match=evidence-candidate {session.scenario.evidence_path}\n"
+            "network_io=none"
+        )
+
+    def _trace_asset(self, session: GameSession) -> str:
+        if "scan" not in session.completed_objectives:
+            return self._blocked(session, "还没有服务画像，无法建立资产关系。先扫描当前虚构目标。")
+
+        self._append_unique(session.investigation_checks, "asset-map")
+        self._append_unique(session.world_tags, "asset-context-mapped")
+        services = ", ".join(f"{item.port}/{item.service}" for item in session.discovered_services)
+        clue = f"资产关系图确认：{session.scenario.target_ip} 的当前模拟服务链为 {services}。"
+        self._append_unique(session.clues, clue)
+        session.emit("agent", "资产关系映射完成：服务画像已经被整理成当前场景的 simulation-only 关系图。")
+        self._refresh_correlation_state(session)
+        return (
+            "SIMULATED ASSET MAP\n"
+            f"asset={session.scenario.target_ip}\n"
+            f"services={services}\n"
+            "scope=current-fictional-scenario-only\n"
+            "network_io=none"
+        )
+
+    def _refresh_correlation_state(self, session: GameSession) -> None:
+        if session.evidence_strategy != "correlate":
+            return
+        if CORRELATION_CHECKS.issubset(session.investigation_checks):
+            session.story_node = "evidence-review"
+            self._append_unique(session.world_tags, "correlated-evidence")
+            consequence = "日志轨迹与资产关系已经交叉吻合，候选证据的模拟置信度提升，可以继续读取。"
+            if consequence not in session.consequences:
+                session.consequences.append(consequence)
+                session.emit("reward", consequence)
+        else:
+            session.story_node = "correlation-work"
 
     def _inspect_file(self, session: GameSession, resource: str | None) -> str:
         if "enumerate" not in session.completed_objectives:
             return self._blocked(session, "当前还没有可靠的文件路径。先枚举隐藏路径。")
+
+        if session.evidence_strategy is None:
+            self._apply_evidence_strategy(session, "direct", explicit=False)
+        if session.evidence_strategy == "correlate" and not CORRELATION_CHECKS.issubset(session.investigation_checks):
+            missing = CORRELATION_CHECKS.difference(session.investigation_checks)
+            labels = {"log-query": "日志查询", "asset-map": "资产关系映射"}
+            return self._blocked(
+                session,
+                "关联证据路线尚未满足条件，还缺少：" + "、".join(labels[item] for item in sorted(missing)) + "。",
+            )
 
         resolved_resource = resource or session.scenario.evidence_path
         if resolved_resource != session.scenario.evidence_path:
@@ -373,11 +495,14 @@ class GameRuntime:
     @staticmethod
     def _status(session: GameSession) -> str:
         tags = ",".join(session.world_tags) if session.world_tags else "-"
+        checks = ",".join(session.investigation_checks) if session.investigation_checks else "-"
         return (
             f"scenario={session.scenario.name}\n"
             f"status={session.status}\n"
             f"story_node={session.story_node}\n"
             f"story_branch={session.story_branch or 'unselected'}\n"
+            f"evidence_strategy={session.evidence_strategy or 'unselected'}\n"
+            f"investigation_checks={checks}\n"
             f"world_tags={tags}\n"
             f"consequences={len(session.consequences)}\n"
             f"objectives={len(session.completed_objectives)}/{len(session.scenario.objectives)}\n"
@@ -396,16 +521,20 @@ class GameRuntime:
             "approach focused  # 定向、低噪声\n"
             "approach broad    # 广覆盖、-3 分\n"
             f"dirsearch -u http://{session.scenario.target_ip}\n"
+            "evidence direct   # 直接验证候选证据\n"
+            "evidence correlate # 先完成双重关联检查\n"
+            "grep incident /var/log/paper-range/events.log\n"
+            "asset-map\n"
             "cat /你从枚举结果中发现的证据文件\n"
             "ssh <你从证据中发现的用户>@<目标>\n"
             "status\n"
-            "也可以在任务面板请求 Hint（每次 -10 分）。"
+            "所有命令都只是 Typed Intent，不会交给系统 shell，也不会访问真实网络。"
         )
 
     def _unknown(self, session: GameSession, command: str) -> str:
         return self._invalid(
             session,
-            f"我理解你想执行“{command}”，但当前模拟器只实现端口扫描、Web 初查、调查分支选择、路径枚举、证据读取和模拟 SSH 访问。输入 help 查看动作。",
+            f"我理解你想执行“{command}”，但当前模拟器只实现服务侦察、Web 调查、路径枚举、证据策略、模拟日志查询、资产关系映射、证据读取和模拟 SSH 访问。输入 help 查看动作。",
         )
 
     @staticmethod
