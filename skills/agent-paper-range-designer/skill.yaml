@@ -1,0 +1,45 @@
+name: agent-paper-range-designer
+version: 1.0.0
+category: simulation
+description: "Designs and verifies simulation-only narrative cyber ranges with typed actions, world state, learning loops, theme contracts, and fail-closed target boundaries"
+
+capabilities:
+  - scenario_contract_design
+  - typed_action_contracts
+  - world_state_design
+  - story_graph_design
+  - learning_loop_design
+  - theme_pack_contracts
+  - simulation_boundary_review
+
+trigger:
+  keywords:
+    - "paper range cyber range 纸上靶场 剧情靶场 simulation scenario worldstate flag hint score"
+
+input:
+  required:
+    - project_root
+    - goal
+  optional:
+    - existing_scenarios
+    - existing_action_contract
+    - existing_world_state
+    - theme_requirements
+
+output:
+  artifacts:
+    - scenario_contract
+    - action_contract
+    - world_state_contract
+    - simulation_boundary
+    - learning_contract
+    - verification_report
+
+risk:
+  level: medium
+  notes:
+    - "Cyber-security themed content must remain simulation-only unless a separately reviewed isolated target environment is explicitly in scope."
+
+dependencies: []
+
+status: stable

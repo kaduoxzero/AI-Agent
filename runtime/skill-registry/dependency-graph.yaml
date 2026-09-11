@@ -19,6 +19,7 @@ nodes:
     - agent-debugger
     - agent-rag-engineer
     - agent-multi-agent-designer
+    - agent-paper-range-designer
     - agent-eval-hardening
     - agent-productionizer
     - agent-security-reviewer
@@ -32,6 +33,7 @@ edges:
       - agent-guided-builder
       - agent-greenfield-builder
       - agent-existing-project-modifier
+      - agent-paper-range-designer
 
   agent-project-orchestrator:
     routes_to:
@@ -41,17 +43,27 @@ edges:
       - agent-existing-project-modifier
       - agent-debugger
       - agent-architecture-reviewer
+      - agent-paper-range-designer
 
   agent-grill-me:
     hands_off_to:
       - agent-guided-builder
       - agent-greenfield-builder
       - agent-existing-project-modifier
+      - agent-paper-range-designer
 
   agent-guided-builder:
     hands_off_to:
       - agent-greenfield-builder
       - agent-existing-project-modifier
+      - agent-paper-range-designer
+
+  agent-paper-range-designer:
+    routes_to:
+      - agent-existing-project-modifier
+      - agent-security-reviewer
+      - agent-eval-hardening
+      - agent-productionizer
 
 constraints:
   - every_route_target_must_exist_in_registry: true
