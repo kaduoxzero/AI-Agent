@@ -8,78 +8,63 @@ description: Design, extend, review, and verify Paper Range narrative cyber-simu
 
 ## Objective
 
-把“做一个网络安全靶场 / 剧情推演 / 命令式学习游戏”转换成一个 **可验证、可扩展、默认不触达真实网络** 的模拟系统。
+把“纸上靶场 / 剧情靶场 / Cyber Range 学习游戏”转换成一个 **可验证、可扩展、默认不触达真实网络** 的模拟系统。
 
-本 Skill 的单一职责是：
+本 Skill 的单一职责：设计和审查 Paper Range 的 Scenario / Action / WorldState / Story / Learning / Theme / Sandbox Contract。
 
-> 设计和审查 Paper Range 类叙事式模拟产品的 Scenario / Action / WorldState / Story / Learning / Theme / Sandbox Contract。
-
-它不负责通用 Web 前端实现、通用生产部署或真实安全测试；这些工作按需交给 Existing Project Modifier、Security Reviewer、Eval Hardening、Productionizer 等专项 Skill。
-
-## 1. Trigger & Scope
+## Trigger & Scope
 
 出现以下意图时使用：
 
-- 纸上靶场、剧情靶场、Cyber Range、CTF-like 学习场景；
-- “用户输入 nmap/curl/ssh 或自然语言，系统模拟结果”；
-- 设计虚构目标机、服务、证据、线索、Flag、任务链；
+- 创建或扩展纸上靶场、剧情靶场、Cyber Range；
+- 用户输入 `nmap / curl / ssh` 或自然语言，系统只模拟结果；
+- 设计虚构目标机、服务、线索、Evidence、Flag、任务链；
 - 设计 WorldState、Story Graph、Branch / Consequence；
 - 设计 Hint、Score、复盘、学习报告；
-- 设计多套前端 Theme Pack 与场景到主题的选择规则；
-- 审查是否可能误触真实网络、宿主机或持久化外部状态；
-- 将新的 Paper Range 场景或动作接入现有 Runtime。
+- 设计 Theme Pack Registry 与场景主题选择；
+- 审查 Session Reset、容器隔离和场景外目标拒绝；
+- 将新场景、新 Action 接入现有 Paper Range Runtime。
 
-不使用本 Skill 的情况：
+不使用本 Skill：
 
 - 对真实目标执行安全测试；
-- 通用漏洞利用研究；
-- 与 Paper Range 无关的普通 Agent 项目；
-- 只做 CSS 调整且不影响场景/动作/状态契约。
+- 与模拟产品无关的通用 Agent 工程；
+- 只做普通 CSS 调整且不影响场景、动作、状态契约。
 
-## 2. Non-Negotiable Simulation Boundary
+## Simulation Boundary
 
-Paper Range 默认采用 **Simulation-Only / Fail-Closed** 边界：
+默认采用 **Simulation-Only / Fail-Closed**：
 
-1. 场景目标必须来自 Scenario Registry；
-2. 用户输入不能直接传入 `subprocess`、shell、raw socket 或真实扫描器；
-3. `nmap / curl / ssh / browser / file` 等表面命令必须先解析成 Typed Action Intent；
+1. Target 必须来自 Scenario Registry；
+2. 用户输入不得直接进入 shell、`subprocess`、raw socket 或真实扫描器；
+3. 表面命令必须先变成 Typed Action Intent；
 4. Runtime 只修改当前 Session 的虚构 WorldState；
-5. 输入场景之外的 IP / Host / URL 必须拒绝；
-6. 不允许因为“看起来像内网地址”就默认安全；
-7. 容器内如需真实工具，只能作用于明确创建的隔离靶容器，并必须单独经过 Security Review；
-8. 默认不向宿主机、互联网、公司网络或用户真实资产发包；
-9. 所有 Flag、凭据、日志、服务 Banner 必须是训练数据；
-10. 无法确认目标是否属于模拟世界时，Fail Closed。
+5. 场景外 IP / Host / URL 必须拒绝；
+6. 不能因为目标是 RFC1918 地址就默认安全；
+7. 如未来需要真实隔离靶容器，必须单独经过 Security Review；
+8. 无法确认是否属于模拟世界时 Fail Closed。
 
-推荐边界：
+正确链路：
 
 ```text
 User Input
-   ↓
-Intent Parser
-   ↓
-Target / Capability Policy
-   ↓
-Simulation Adapter
-   ↓
-WorldState Mutation
-   ↓
-Narrative / Evidence / Learning Event
-   ↓
-UI
+→ Intent Parser
+→ Target / Capability Policy
+→ Simulation Adapter
+→ WorldState Mutation
+→ Narrative / Evidence / Learning Event
+→ UI
 ```
 
 禁止：
 
 ```text
 User Input
-   ↓
-subprocess.run(user_input)
-   ↓
-Real Network
+→ subprocess.run(user_input)
+→ Real Network
 ```
 
-## 3. Scenario Contract
+## Scenario Contract
 
 每个场景至少定义：
 
@@ -103,28 +88,24 @@ Theme Tags
 Reset Semantics
 ```
 
-场景配置应优先数据化，避免把每条剧情硬编码进 Runtime 分支。
+场景配置优先数据化，避免每条剧情硬编码到 Runtime 分支。
 
-### Target Registry
-
-目标必须显式登记：
+Target Registry 至少包含：
 
 ```text
-Target ID:
-Display Host/IP:
-Allowed Protocols:
-Allowed Services:
-Simulation Adapter:
-State Owner:
+Target ID
+Display Host/IP
+Allowed Protocols
+Allowed Services
+Simulation Adapter
+State Owner
 ```
 
-任何未登记目标都视为 Out of Scope。
+未登记 Target 一律 Out of Scope。
 
-## 4. Typed Action Contract
+## Typed Action Contract
 
-自然语言和命令必须归一化到同一动作模型。
-
-推荐：
+自然语言、命令和未来 Agent Action 必须归一化到同一结构：
 
 ```text
 ActionIntent
@@ -138,7 +119,7 @@ ActionIntent
 - capability
 ```
 
-示例：
+例如：
 
 ```text
 “我先扫描所有 TCP 端口”
@@ -149,11 +130,11 @@ ActionIntent(kind=scan_ports)
 同一个 Simulation Handler
 ```
 
-Intent Parser 只负责解释，不拥有 WorldState mutation 权限。
+Intent Parser 负责解释，不拥有 WorldState mutation 权限。
 
-## 5. WorldState Contract
+## WorldState Contract
 
-Session State 至少拆分：
+Session State 至少分层：
 
 ```text
 Identity
@@ -186,36 +167,32 @@ Runtime
 - completed_at
 ```
 
-不要使用一个无约束的大字典让不同组件任意覆盖。
+避免多个组件随意覆盖一个无约束的大字典。
 
-## 6. Session & Memory Lifecycle
+## Session & Memory Lifecycle
 
-Paper Range 默认采用 Ephemeral Session：
+Paper Range 默认 Ephemeral Session：
 
 ```text
 container start
-  ↓
-new SessionStore
-  ↓
-本次运行持续复用状态
-  ↓
-container stop/remove
-  ↓
-状态消失
+→ new SessionStore
+→ 本次运行持续复用状态
+→ container stop/remove
+→ WorldState 消失
 ```
 
 默认验收：
 
-- 无数据库持久化游戏 Session；
-- 无 Redis durable memory；
-- 无宿主机 volume 保存 WorldState；
-- 新容器无法看到上一容器的战役状态。
+- 游戏 Session 不写 PostgreSQL；
+- 不写 Redis durable memory；
+- 不通过宿主机 volume 保存 WorldState；
+- 新容器看不到上一容器的战役状态。
 
-如果产品未来需要账号进度、排行榜或课程历史，必须把 **Player Progress** 与 **Live WorldState** 分离，不能直接把整个游戏 Session 永久化。
+未来若需要账号进度/排行榜，必须把 `Player Progress` 和 `Live WorldState` 分离。
 
-## 7. Story Graph
+## Story Graph
 
-剧情不应只是一串固定文案。推荐模型：
+推荐：
 
 ```text
 StoryNode
@@ -229,40 +206,27 @@ StoryNode
 - next[]
 ```
 
-规则：
+关键剧情由 WorldState / Evidence 驱动。模型可生成表达，但不能绕过 Completion Condition。
 
-- 关键剧情推进由 WorldState / Evidence 驱动，不由模型随意宣告；
-- 模型可以生成叙事表达，但不能绕过 Completion Condition；
-- Branch 必须有可测试的 Trigger；
-- Consequence 必须修改明确字段或解锁明确节点。
+## Learning Loop
 
-## 8. Learning Loop
-
-每个场景至少回答：
+每个场景必须回答：
 
 ```text
 用户在学什么？
 什么行为代表理解？
 什么错误值得反馈？
 Hint 如何逐步降低难度？
-如何在结束后给出可行动的复盘？
+结束后给什么可行动复盘？
 ```
 
-推荐指标：
+建议指标：Completion、Action Count、Hint Count、Invalid Action Count、Evidence Coverage、Objective Order、Efficiency Score。
 
-- Completion；
-- Action Count；
-- Hint Count；
-- Invalid Action Count；
-- Evidence Coverage；
-- Objective Order；
-- Optional Efficiency Score。
+评分奖励正确侦察、证据链、边界意识和任务完成质量，不奖励“攻击强度”。
 
-评分不应奖励“更激进的攻击动作”，而应奖励正确的侦察、证据链、边界意识和任务完成质量。
+## Theme Pack Contract
 
-## 9. Theme Pack Contract
-
-视觉主题与游戏逻辑分离。
+视觉与 Runtime 分离：
 
 ```text
 ThemePack
@@ -272,73 +236,61 @@ ThemePack
 - typography
 - panel treatment
 - ambient treatment
-- icon / asset references
+- asset references
 - motion profile
 ```
 
-场景只声明：
+Scenario 只声明 Theme Tags。Theme Selector 决定具体主题。若扩展到 40 套主题，先建立 Registry + Token Contract，不复制 40 份页面逻辑。
 
-```text
-theme_tags: [underground, inferno, industrial]
-```
+## Skill Composition
 
-Theme Selector 决定具体主题。不要在 Scenario Runtime 中硬编码 CSS。
+按需选择最多 2 个 Supporting Skills：
 
-如果存在 40 套主题，应先做 Registry + Token Contract，再扩主题数量，而不是复制 40 份页面逻辑。
+- `agent-security-reviewer`：网络、文件、容器、Tool 权限边界；
+- `agent-eval-hardening`：轨迹、Reset、Fail-Closed、回归测试；
+- `agent-existing-project-modifier`：修改现有 Paper Range 代码；
+- `agent-productionizer`：Docker、镜像、发布、运行环境；
+- `agent-multi-agent-designer`：仅在确有多个独立 Agent 角色时使用。
 
-## 10. Skill Composition
+## Verification Gates
 
-本 Skill 可以请求最多 2 个 Supporting Skills：
-
-- `agent-security-reviewer`：审查网络、文件、容器、Tool 权限边界；
-- `agent-eval-hardening`：建立场景回归、轨迹、Reset、Fail-Closed 测试；
-- `agent-existing-project-modifier`：已有 Paper Range 工程代码修改；
-- `agent-productionizer`：Docker、发布、SRE、镜像与运行环境；
-- `agent-multi-agent-designer`：只有场景确实需要多个独立 Agent 角色时使用。
-
-不要一次加载全部 Skill。
-
-## 11. Verification Gates
-
-至少验证：
-
-### Action Gate
+Action Gate：
 
 - [ ] 自然语言和命令能映射到同一 Intent；
 - [ ] Intent Parser 不直接执行真实命令；
 - [ ] 未知 Action Fail Closed；
 - [ ] 场景外 Target Fail Closed。
 
-### State Gate
+State Gate：
 
-- [ ] 每个 Action 有确定的 State Mutation；
+- [ ] 每个 Action 有确定 State Mutation；
 - [ ] 重复 Action 不破坏状态；
 - [ ] Objective / Story 不能被直接跳过；
-- [ ] Completion 条件可自动测试。
+- [ ] Completion Condition 可自动测试。
 
-### Reset Gate
+Reset Gate：
 
 - [ ] 同一容器内 Session 可持续；
 - [ ] 删除 Session 后状态消失；
 - [ ] 后端容器重启后旧 Session 不存在；
-- [ ] Compose 默认没有持久化 WorldState 的 volume。
+- [ ] 默认无持久化 WorldState 的 volume。
 
-### Learning Gate
+Learning Gate：
 
 - [ ] Hint 与评分规则确定；
-- [ ] 错误动作反馈不会泄露后续全部答案；
+- [ ] 错误反馈不直接泄露后续全部答案；
 - [ ] 完成后能生成复盘；
-- [ ] 评分关注学习路径而非真实攻击强度。
+- [ ] 评分关注学习质量。
 
-### UI Gate
+UI Gate：
 
-- [ ] 用户能看到当前 Objective；
-- [ ] 用户能看到线索 / Evidence；
-- [ ] 用户能输入自然语言和模拟命令；
-- [ ] 世界变化有可见反馈；
-- [ ] Mobile / Desktop 都能完成核心流程。
+- [ ] 当前 Objective 可见；
+- [ ] Clue / Evidence 可见；
+- [ ] 可输入自然语言和模拟命令；
+- [ ] WorldState 变化有可见反馈；
+- [ ] Desktop / Mobile 可完成核心流程。
 
-## 12. Evaluation
+## Evaluation
 
 最少测试集：
 
@@ -355,7 +307,7 @@ Session Delete Path
 Fresh Container Path
 ```
 
-建议 Golden Trajectory：
+Golden Trajectory：
 
 ```text
 create session
@@ -367,9 +319,9 @@ create session
 → report
 ```
 
-## 13. Deliverables
+## Deliverables
 
-一次完整执行至少返回：
+至少输出：
 
 ```text
 Scenario Contract
@@ -384,9 +336,7 @@ Open Risks
 Next Exact Action
 ```
 
-## 14. Return Contract
-
-返回 Master：
+## Report Back to Master
 
 ```text
 Skill Used: agent-paper-range-designer

@@ -43,6 +43,7 @@ Project B/.agent-engineering/      Project B State
 | Debugging | `../agent-debugger/SKILL.md` | 死循环、Tool 不调用、State 错乱、异常轨迹 |
 | RAG | `../agent-rag-engineer/SKILL.md` | Retrieval、Rerank、Citation、ACL、Agentic RAG |
 | Multi-Agent | `../agent-multi-agent-designer/SKILL.md` | Supervisor、Handoff、并行 Worker、A2A |
+| Paper Range Simulation | `../agent-paper-range-designer/SKILL.md` | 纸上靶场、Cyber Range、剧情模拟、WorldState、模拟命令、Flag、Hint / Score |
 | Evaluation | `../agent-eval-hardening/SKILL.md` | Regression、Golden Set、Trajectory、Release Gate |
 | Security | `../agent-security-reviewer/SKILL.md` | Injection、权限、Identity、敏感 Tool、HITL |
 | Performance | `../agent-performance-cost-optimizer/SKILL.md` | Token、Latency、Concurrency、Cost |
@@ -79,6 +80,7 @@ Architecture Signal
 Debug Signal
 RAG Signal
 Multi-Agent Signal
+Simulation Signal
 Security Signal
 Evaluation Signal
 Performance Signal
@@ -87,6 +89,18 @@ Handover Signal
 ```
 
 任一信号被触发时，可以暂停当前专项流程，加载对应 Skill 处理，再返回原流程。
+
+### Simulation Signal
+
+出现以下信号时优先切换到 `agent-paper-range-designer`：
+
+- 用户要求创建或扩展纸上靶场、Cyber Range、剧情式安全训练；
+- 用户希望自然语言与 `nmap/curl/ssh` 等命令共享一个模拟 Action Contract；
+- 任务涉及虚构 Target Registry、WorldState、Story Graph、Flag、Hint、Score 或 Reset Contract；
+- 需要审查模拟器是否可能越界触达真实网络、宿主机或持久化外部状态；
+- 需要设计场景与 Theme Pack 的解耦和随机/标签选择。
+
+Paper Range 工作默认 Simulation-Only。涉及真实隔离靶容器或网络工具时，应让 `agent-security-reviewer` 作为 Supporting Skill 审查边界。
 
 ### Handover Signal
 
@@ -141,6 +155,24 @@ Performance Optimizer
 返回 Greenfield Builder
 ```
 
+Paper Range 场景示例：
+
+```text
+Existing Project Modifier
+    ↓
+新增 Paper Range 场景 / Action
+    ↓
+Paper Range Designer
+    ↓
+定义 Scenario / Action / WorldState / Reset Contract
+    ↓
+Security Reviewer 检查 Simulation Boundary
+    ↓
+返回 Existing Project Modifier 实现
+    ↓
+Eval Hardening 验证 Golden Trajectory / Wrong Target / Fresh Container
+```
+
 交接场景示例：
 
 ```text
@@ -191,6 +223,21 @@ Return Point
 禁止仅把用户最初一句需求传给下一个 Skill，否则会丢失已经做出的架构决定。
 
 禁止从另一个项目的 `.agent-engineering/` 自动继承状态。
+
+Paper Range 任务额外传递：
+
+```text
+Scenario IDs
+Target Registry
+Allowed Actions
+Action Contract
+WorldState Contract
+Simulation Boundary
+Learning Contract
+Theme Contract
+Reset Semantics
+Golden Trajectory
+```
 
 交接任务额外传递：
 
@@ -259,6 +306,18 @@ Verification Performed:
 New Risks:
 Unresolved Items:
 Recommended Next Capability:
+```
+
+`agent-paper-range-designer` 额外返回：
+
+```text
+Scenario / Runtime Scope:
+Simulation Boundary:
+Action Contract Changes:
+WorldState Changes:
+Learning Changes:
+Theme Changes:
+Security Boundary Evidence:
 ```
 
 `agent-enterprise-handover` 额外返回：
