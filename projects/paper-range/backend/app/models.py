@@ -5,7 +5,16 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-ActionKind = Literal["scan_ports", "inspect_web", "ssh_access", "status", "help", "unknown"]
+ActionKind = Literal[
+    "scan_ports",
+    "inspect_web",
+    "enumerate_paths",
+    "inspect_file",
+    "ssh_access",
+    "status",
+    "help",
+    "unknown",
+]
 
 
 class PortService(BaseModel):
@@ -21,7 +30,13 @@ class Objective(BaseModel):
     description: str
 
 
-class Scenario(BaseModel):
+class ScenarioPublic(BaseModel):
+    """Scenario metadata safe to expose before the player discovers evidence.
+
+    `ssh_user` remains public for the current UI's command helper, but passwords,
+    evidence bodies, hidden paths and flags stay server-side.
+    """
+
     id: str
     name: str
     subtitle: str
@@ -30,11 +45,19 @@ class Scenario(BaseModel):
     target_ip: str
     intro: str
     briefing: str
-    services: list[PortService]
     objectives: list[Objective]
-    hints: list[str]
-    web_clue: str
     ssh_user: str
+
+
+class Scenario(ScenarioPublic):
+    """Server-side scenario definition with undiscovered evidence and rewards."""
+
+    services: list[PortService]
+    hints: list[str]
+    web_observation: str
+    hidden_paths: list[str]
+    evidence_path: str
+    evidence_text: str
     ssh_password: str
     flag: str
 
@@ -52,6 +75,7 @@ class ActionIntent(BaseModel):
     raw_input: str
     source: Literal["command", "natural_language", "system"]
     target: str | None = None
+    resource: str | None = None
 
 
 class GameEvent(BaseModel):
