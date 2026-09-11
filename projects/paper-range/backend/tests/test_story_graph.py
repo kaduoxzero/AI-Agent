@@ -37,7 +37,8 @@ def test_focused_branch_changes_world_state_and_limits_visible_paths() -> None:
     assert choice.session.score == 100
 
     enum = runtime.execute(session.id, "dirsearch -u http://10.10.10.10")
-    assert enum.session.story_node == "evidence-review"
+    assert enum.session.story_node == "evidence-strategy"
+    assert enum.session.evidence_strategy is None
     assert "/archive/shift-note.txt" in enum.output
     assert "/assets/" not in enum.output
     assert enum.session.score == 100
