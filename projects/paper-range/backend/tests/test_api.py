@@ -28,6 +28,8 @@ def test_create_session_and_execute_action() -> None:
     assert created.status_code == 201
     session = created.json()
     assert session["score"] == 100
+    assert session["evidence_strategy"] is None
+    assert session["investigation_checks"] == []
 
     action = client.post(
         f"/api/sessions/{session['id']}/actions",
@@ -52,6 +54,7 @@ def test_hint_and_report_endpoints() -> None:
     assert report.status_code == 200
     assert report.json()["status"] == "active"
     assert report.json()["grade"] == "A"
+    assert report.json()["investigation_checks"] == []
 
 
 def test_random_session_works_across_six_scenarios() -> None:
@@ -67,10 +70,15 @@ def test_random_session_works_across_six_scenarios() -> None:
     }
 
 
-def test_live_story_release_and_missing_event_stream() -> None:
+def test_investigation_v2_release_and_missing_event_stream() -> None:
+    health = client.get("/health")
+    assert health.status_code == 200
+    assert health.json()["version"] == "0.6.0"
+    assert health.json()["persistence"] == "process-memory-only"
+
     openapi = client.get("/openapi.json")
     assert openapi.status_code == 200
-    assert openapi.json()["info"]["version"] == "0.5.0"
+    assert openapi.json()["info"]["version"] == "0.6.0"
 
     missing = client.get("/api/sessions/not-a-session/events")
     assert missing.status_code == 404
