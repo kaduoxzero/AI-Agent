@@ -9,9 +9,9 @@ from uuid import uuid4
 from .intent import IntentParser
 from .models import ActionIntent, ActionResponse, GameEvent, GameSessionView, HintResponse, LearningReport, PortService, Scenario
 from .scenarios import SCENARIOS
+from .themes import choose_theme
 
 
-THEMES = ["inferno", "blood-moon", "black-site"]
 HINT_COST = 10
 
 
@@ -77,7 +77,7 @@ class SessionStore:
         session = GameSession(
             id=str(uuid4()),
             scenario=scenario,
-            theme_id=random.choice(THEMES),
+            theme_id=choose_theme(),
             created_at=datetime.now(UTC),
         )
         session.emit("system", f"新会话已创建：{scenario.name}。本局记忆仅存在于当前运行中的容器进程。")

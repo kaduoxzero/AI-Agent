@@ -1,0 +1,193 @@
+.game-shell {
+  --theme-shell: #050405;
+  --theme-shell-glow: rgba(150, 0, 19, .16);
+  --theme-header: rgba(9, 7, 8, .88);
+  --theme-panel-top: rgba(16, 11, 13, .94);
+  --theme-panel-bottom: rgba(8, 7, 8, .9);
+  --theme-terminal: rgba(2, 5, 5, .94);
+  --theme-agent: rgba(145, 13, 24, .08);
+  --theme-track-start: #8f0f1a;
+  --theme-border: rgba(255,255,255,.08);
+  --theme-complete-bg: rgba(10, 5, 7, .97);
+  background:
+    radial-gradient(circle at 14% 10%, var(--theme-shell-glow), transparent 32rem),
+    radial-gradient(circle at 90% 86%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 30rem),
+    var(--theme-shell);
+}
+
+.game-shell .game-header {
+  background: var(--theme-header);
+  border-color: var(--theme-border);
+}
+
+.game-shell .panel {
+  border-color: var(--theme-border);
+  background: linear-gradient(180deg, var(--theme-panel-top), var(--theme-panel-bottom));
+}
+
+.game-shell .terminal-log {
+  background:
+    linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.18)),
+    repeating-linear-gradient(0deg, transparent 0 23px, rgba(255,255,255,.014) 24px),
+    var(--theme-terminal);
+}
+
+.game-shell .agent-card { background: var(--theme-agent); }
+.game-shell .progress-track span { background: linear-gradient(90deg, var(--theme-track-start), var(--accent)); }
+.game-shell .mission-complete { background: var(--theme-complete-bg); }
+
+.theme-inferno {
+  --accent: #ff4040;
+  --accent-soft: #ff7777;
+  --theme-shell: #050405;
+  --theme-shell-glow: rgba(176, 0, 20, .2);
+  --theme-panel-top: rgba(18, 9, 11, .95);
+  --theme-panel-bottom: rgba(7, 5, 6, .92);
+  --theme-terminal: rgba(2, 6, 5, .96);
+  --theme-agent: rgba(151, 13, 25, .1);
+  --theme-track-start: #7f0711;
+}
+
+.theme-blood-moon {
+  --accent: #ff284f;
+  --accent-soft: #ff7992;
+  --theme-shell: #080307;
+  --theme-shell-glow: rgba(190, 0, 53, .22);
+  --theme-header: rgba(13, 4, 9, .9);
+  --theme-panel-top: rgba(25, 6, 14, .94);
+  --theme-panel-bottom: rgba(8, 3, 6, .92);
+  --theme-terminal: rgba(6, 2, 6, .96);
+  --theme-agent: rgba(180, 0, 47, .09);
+  --theme-track-start: #751026;
+}
+
+.theme-black-site {
+  --accent: #ff5c3f;
+  --accent-soft: #ff8f78;
+  --theme-shell: #050506;
+  --theme-shell-glow: rgba(126, 30, 7, .2);
+  --theme-header: rgba(7, 7, 8, .94);
+  --theme-panel-top: rgba(15, 13, 13, .96);
+  --theme-panel-bottom: rgba(5, 5, 6, .94);
+  --theme-terminal: rgba(3, 4, 4, .97);
+  --theme-agent: rgba(140, 42, 14, .09);
+  --theme-track-start: #6e1d0d;
+}
+
+.theme-ash-cathedral {
+  --accent: #d9c6c6;
+  --accent-soft: #f0dddd;
+  --theme-shell: #070707;
+  --theme-shell-glow: rgba(120, 100, 100, .14);
+  --theme-header: rgba(12, 12, 12, .94);
+  --theme-panel-top: rgba(20, 19, 19, .95);
+  --theme-panel-bottom: rgba(8, 8, 8, .94);
+  --theme-terminal: rgba(5, 6, 6, .97);
+  --theme-agent: rgba(130, 110, 110, .08);
+  --theme-track-start: #655858;
+  --theme-border: rgba(236, 220, 220, .09);
+}
+
+.theme-neon-crypt {
+  --accent: #ff3bd4;
+  --accent-soft: #ff8bea;
+  --theme-shell: #07030a;
+  --theme-shell-glow: rgba(179, 0, 162, .18);
+  --theme-header: rgba(12, 4, 15, .92);
+  --theme-panel-top: rgba(22, 6, 25, .94);
+  --theme-panel-bottom: rgba(7, 3, 9, .94);
+  --theme-terminal: rgba(4, 2, 8, .97);
+  --theme-agent: rgba(178, 0, 143, .09);
+  --theme-track-start: #66105d;
+}
+
+.theme-reactor-amber {
+  --accent: #ffad32;
+  --accent-soft: #ffd081;
+  --theme-shell: #090603;
+  --theme-shell-glow: rgba(184, 103, 0, .19);
+  --theme-header: rgba(15, 10, 4, .92);
+  --theme-panel-top: rgba(24, 16, 7, .94);
+  --theme-panel-bottom: rgba(8, 6, 3, .94);
+  --theme-terminal: rgba(5, 5, 2, .97);
+  --theme-agent: rgba(171, 99, 0, .09);
+  --theme-track-start: #71410a;
+}
+
+.theme-plague-green {
+  --accent: #76e34e;
+  --accent-soft: #a6f58a;
+  --theme-shell: #030703;
+  --theme-shell-glow: rgba(70, 154, 39, .18);
+  --theme-header: rgba(5, 12, 5, .92);
+  --theme-panel-top: rgba(8, 20, 8, .94);
+  --theme-panel-bottom: rgba(3, 8, 3, .94);
+  --theme-terminal: rgba(2, 6, 2, .97);
+  --theme-agent: rgba(60, 145, 37, .08);
+  --theme-track-start: #285d1a;
+}
+
+.theme-ice-vault {
+  --accent: #4ed9ff;
+  --accent-soft: #94eaff;
+  --theme-shell: #02070a;
+  --theme-shell-glow: rgba(0, 116, 165, .18);
+  --theme-header: rgba(3, 11, 15, .92);
+  --theme-panel-top: rgba(5, 18, 24, .94);
+  --theme-panel-bottom: rgba(2, 7, 10, .94);
+  --theme-terminal: rgba(1, 6, 9, .97);
+  --theme-agent: rgba(0, 112, 157, .08);
+  --theme-track-start: #14556a;
+}
+
+.theme-violet-null {
+  --accent: #a765ff;
+  --accent-soft: #c99cff;
+  --theme-shell: #050308;
+  --theme-shell-glow: rgba(101, 44, 174, .2);
+  --theme-header: rgba(8, 5, 13, .92);
+  --theme-panel-top: rgba(15, 8, 24, .94);
+  --theme-panel-bottom: rgba(5, 3, 8, .94);
+  --theme-terminal: rgba(3, 2, 7, .97);
+  --theme-agent: rgba(95, 45, 157, .09);
+  --theme-track-start: #49306e;
+}
+
+.theme-rust-foundry {
+  --accent: #db6c3d;
+  --accent-soft: #ef9a75;
+  --theme-shell: #080503;
+  --theme-shell-glow: rgba(130, 57, 24, .21);
+  --theme-header: rgba(13, 8, 5, .93);
+  --theme-panel-top: rgba(22, 12, 7, .94);
+  --theme-panel-bottom: rgba(8, 5, 3, .94);
+  --theme-terminal: rgba(5, 4, 2, .97);
+  --theme-agent: rgba(133, 56, 24, .09);
+  --theme-track-start: #6b2d18;
+}
+
+.theme-signal-blue {
+  --accent: #4d7dff;
+  --accent-soft: #8eabff;
+  --theme-shell: #02040a;
+  --theme-shell-glow: rgba(37, 72, 179, .19);
+  --theme-header: rgba(4, 7, 15, .93);
+  --theme-panel-top: rgba(7, 12, 25, .94);
+  --theme-panel-bottom: rgba(2, 4, 9, .94);
+  --theme-terminal: rgba(1, 3, 8, .97);
+  --theme-agent: rgba(37, 72, 179, .08);
+  --theme-track-start: #274078;
+}
+
+.theme-obsidian-gold {
+  --accent: #e5be57;
+  --accent-soft: #f1d887;
+  --theme-shell: #050504;
+  --theme-shell-glow: rgba(150, 112, 24, .16);
+  --theme-header: rgba(9, 9, 7, .94);
+  --theme-panel-top: rgba(17, 16, 11, .95);
+  --theme-panel-bottom: rgba(6, 6, 5, .94);
+  --theme-terminal: rgba(3, 4, 3, .97);
+  --theme-agent: rgba(145, 108, 23, .08);
+  --theme-track-start: #6b561f;
+}
