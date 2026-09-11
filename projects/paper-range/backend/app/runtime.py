@@ -6,11 +6,13 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from .models import ActionResponse, GameEvent, GameSessionView, PortService, Scenario
+from .intent import IntentParser
+from .models import ActionResponse, GameEvent, GameSessionView, HintResponse, LearningReport, PortService, Scenario
 from .scenarios import SCENARIOS
 
 
 THEMES = ["inferno", "blood-moon", "black-site"]
+HINT_COST = 10
 
 
 @dataclass
@@ -25,7 +27,12 @@ class GameSession:
     clues: list[str] = field(default_factory=list)
     discovered_services: list[PortService] = field(default_factory=list)
     events: list[GameEvent] = field(default_factory=list)
+    score: int = 100
+    action_count: int = 0
+    hint_count: int = 0
+    invalid_action_count: int = 0
     flag: str | None = None
+    completed_at: datetime | None = None
 
     def emit(self, kind: str, text: str) -> None:
         self.events.append(GameEvent(seq=len(self.events) + 1, kind=kind, text=text))
@@ -44,6 +51,10 @@ class GameSession:
             clues=list(self.clues),
             discovered_services=list(self.discovered_services),
             events=list(self.events),
+            score=self.score,
+            action_count=self.action_count,
+            hint_count=self.hint_count,
+            invalid_action_count=self.invalid_action_count,
             flag=self.flag,
         )
 
@@ -93,54 +104,93 @@ class SessionStore:
 
 
 class GameRuntime:
-    def __init__(self, store: SessionStore | None = None) -> None:
+    def __init__(self, store: SessionStore | None = None, intent_parser: IntentParser | None = None) -> None:
         self.store = store or SessionStore()
+        self.intent_parser = intent_parser or IntentParser()
 
     def execute(self, session_id: str, raw_input: str) -> ActionResponse:
         session = self.store.get(session_id)
-        command = raw_input.strip()
-        session.emit("tool", f"> {command}")
+        intent = self.intent_parser.parse(raw_input)
+        session.action_count += 1
+        session.emit("tool", f"> {intent.raw_input}")
 
         if session.status == "completed":
-            return ActionResponse(action="completed", output="本战役已经完成。可以创建一个新会话开始新的世界。", session=session.view())
+            return ActionResponse(
+                intent=intent,
+                output="本战役已经完成。可以查看学习报告，或创建一个新会话开始新的世界。",
+                session=session.view(),
+            )
 
-        action = self._classify(command)
-        if action == "scan_ports":
-            output = self._scan_ports(session, command)
-        elif action == "inspect_web":
-            output = self._inspect_web(session, command)
-        elif action == "ssh_access":
-            output = self._ssh_access(session, command)
-        elif action == "status":
+        if intent.kind == "scan_ports":
+            output = self._scan_ports(session, intent.target)
+        elif intent.kind == "inspect_web":
+            output = self._inspect_web(session, intent.target)
+        elif intent.kind == "ssh_access":
+            output = self._ssh_access(session, intent.raw_input)
+        elif intent.kind == "status":
             output = self._status(session)
-        elif action == "help":
+        elif intent.kind == "help":
             output = self._help(session)
         else:
-            output = self._unknown(session, command)
+            output = self._unknown(session, intent.raw_input)
 
-        return ActionResponse(action=action, output=output, session=session.view())
+        return ActionResponse(intent=intent, output=output, session=session.view())
 
-    @staticmethod
-    def _classify(command: str) -> str:
-        lower = command.lower()
-        if lower in {"help", "?", "帮助"}:
-            return "help"
-        if lower in {"status", "状态", "任务"}:
-            return "status"
-        if lower.startswith("nmap ") or any(word in command for word in ["扫描", "端口", "探测服务"]):
-            return "scan_ports"
-        if lower.startswith("curl ") or any(word in command for word in ["访问网站", "调查 web", "查看网页", "检查 web"]):
-            return "inspect_web"
-        if lower.startswith("ssh ") or any(word in command for word in ["ssh 登录", "登录主机", "远程登录"]):
-            return "ssh_access"
-        return "unknown"
+    def request_hint(self, session_id: str) -> HintResponse:
+        session = self.store.get(session_id)
+        if session.status == "completed":
+            return HintResponse(hint="战役已经完成。现在更适合查看学习报告。", cost=0, session=session.view())
 
-    def _scan_ports(self, session: GameSession, command: str) -> str:
-        target = self._extract_target(command) or session.scenario.target_ip
-        if target != session.scenario.target_ip:
-            text = f"纸上靶场拒绝访问场景外目标 {target}。当前允许的虚构目标只有 {session.scenario.target_ip}。"
-            session.emit("system", text)
-            return text
+        hint_index = min(session.objective_index, len(session.scenario.hints) - 1)
+        hint = session.scenario.hints[hint_index]
+        session.hint_count += 1
+        session.score = max(0, session.score - HINT_COST)
+        session.emit("agent", f"Hint (-{HINT_COST}): {hint}")
+        return HintResponse(hint=hint, cost=HINT_COST, session=session.view())
+
+    def report(self, session_id: str) -> LearningReport:
+        session = self.store.get(session_id)
+        grade = self._grade(session.score)
+        strengths: list[str] = []
+        next_steps: list[str] = []
+
+        if session.hint_count == 0:
+            strengths.append("没有使用 Hint，能够自主推进当前任务链。")
+        else:
+            strengths.append("能够利用 Hint 恢复任务方向并继续完成推演。")
+        if session.invalid_action_count <= 1:
+            strengths.append("行动路径较集中，较少出现与当前目标无关的尝试。")
+        if session.status == "completed":
+            strengths.append("完成了侦察 → Web 调查 → 模拟访问的完整证据链。")
+        else:
+            next_steps.append("完成剩余目标后再生成最终学习结论。")
+
+        if session.hint_count > 0:
+            next_steps.append("重玩同一场景一次，尝试不使用 Hint 完成相同步骤。")
+        if session.invalid_action_count > 1:
+            next_steps.append("执行动作前先对照当前 Objective，减少无效尝试。")
+        next_steps.append("分别用自然语言和命令表达同一意图，观察它们如何映射到统一 Action Contract。")
+
+        return LearningReport(
+            session_id=session.id,
+            scenario_name=session.scenario.name,
+            status=session.status,
+            score=session.score,
+            grade=grade,
+            action_count=session.action_count,
+            hint_count=session.hint_count,
+            invalid_action_count=session.invalid_action_count,
+            completed_objectives=len(session.completed_objectives),
+            total_objectives=len(session.scenario.objectives),
+            strengths=strengths,
+            next_steps=next_steps,
+            flag=session.flag,
+        )
+
+    def _scan_ports(self, session: GameSession, target: str | None) -> str:
+        resolved_target = target or session.scenario.target_ip
+        if resolved_target != session.scenario.target_ip:
+            return self._reject_external_target(session, resolved_target)
 
         session.discovered_services = list(session.scenario.services)
         if "scan" not in session.completed_objectives:
@@ -148,7 +198,7 @@ class GameRuntime:
             session.objective_index = max(session.objective_index, 1)
             session.emit("reward", "目标完成：扫描开放端口。")
 
-        lines = [f"SIMULATED NMAP {target}", "PORT      STATE  SERVICE       VERSION"]
+        lines = [f"SIMULATED NMAP {resolved_target}", "PORT      STATE  SERVICE       VERSION"]
         for service in session.scenario.services:
             lines.append(f"{service.port}/tcp   open   {service.service:<13} {service.version}")
         lines.append(f"扫描完成：发现 {len(session.scenario.services)} 个开放 TCP 端口。")
@@ -156,12 +206,10 @@ class GameRuntime:
         session.emit("agent", f"我记录了 {len(session.scenario.services)} 个服务。下一步可以检查 Web 服务，寻找剧情线索。")
         return output
 
-    def _inspect_web(self, session: GameSession, command: str) -> str:
-        target = self._extract_target(command) or session.scenario.target_ip
-        if target != session.scenario.target_ip:
-            text = f"该请求被模拟器限制在场景目标 {session.scenario.target_ip} 内。"
-            session.emit("system", text)
-            return text
+    def _inspect_web(self, session: GameSession, target: str | None) -> str:
+        resolved_target = target or session.scenario.target_ip
+        if resolved_target != session.scenario.target_ip:
+            return self._reject_external_target(session, resolved_target)
         if "scan" not in session.completed_objectives:
             text = "你还没有建立服务画像。先扫描目标会让调查更符合任务流程。"
             session.emit("agent", text)
@@ -199,15 +247,17 @@ class GameRuntime:
                 if index + 1 < len(args):
                     supplied_password = args[index + 1]
 
-        # Natural-language play does not require users to restate the password; once the
-        # clue is discovered, the simulation assumes the player selects that training identity.
         if supplied_user and supplied_user != session.scenario.ssh_user:
             text = f"模拟 SSH 拒绝用户 {supplied_user}。证据栏里的训练账户可能更有用。"
             session.emit("agent", text)
+            session.invalid_action_count += 1
+            session.score = max(0, session.score - 1)
             return text
         if supplied_password and supplied_password != session.scenario.ssh_password:
             text = "模拟 SSH 认证失败。当前输入的训练口令与已发现线索不匹配。"
             session.emit("agent", text)
+            session.invalid_action_count += 1
+            session.score = max(0, session.score - 1)
             return text
 
         if "access" not in session.completed_objectives:
@@ -215,6 +265,7 @@ class GameRuntime:
         session.objective_index = len(session.scenario.objectives)
         session.status = "completed"
         session.flag = session.scenario.flag
+        session.completed_at = datetime.now(UTC)
         session.emit("reward", "目标完成：建立模拟访问。")
         session.emit("narrative", "主机欢迎语闪过，封存事故的证据目录出现在屏幕上。战役结束。")
         session.emit("reward", f"MISSION COMPLETE — {session.flag}")
@@ -226,6 +277,9 @@ class GameRuntime:
             f"scenario={session.scenario.name}\n"
             f"status={session.status}\n"
             f"objectives={len(session.completed_objectives)}/{len(session.scenario.objectives)}\n"
+            f"score={session.score}\n"
+            f"actions={session.action_count}\n"
+            f"hints={session.hint_count}\n"
             f"clues={len(session.clues)}"
         )
 
@@ -236,22 +290,34 @@ class GameRuntime:
             f"nmap -p- {session.scenario.target_ip}\n"
             f"curl http://{session.scenario.target_ip}\n"
             f"ssh {session.scenario.ssh_user}@{session.scenario.target_ip}\n"
-            "status"
+            "status\n"
+            "也可以在任务面板请求 Hint（每次 -10 分）。"
         )
 
     def _unknown(self, session: GameSession, command: str) -> str:
+        session.invalid_action_count += 1
+        session.score = max(0, session.score - 1)
         text = (
             f"我理解你想执行“{command}”，但当前 MVP 只实现侦察、Web 调查和模拟 SSH 访问。"
-            "输入 help 查看当前动作。"
+            "输入 help 查看当前动作。无效动作会轻微影响学习评分。"
         )
         session.emit("agent", text)
         return text
 
     @staticmethod
-    def _extract_target(command: str) -> str | None:
-        for token in command.replace("http://", " ").replace("https://", " ").replace("@", " ").split():
-            stripped = token.strip("/:,[]()")
-            parts = stripped.split(".")
-            if len(parts) == 4 and all(part.isdigit() for part in parts):
-                return stripped
-        return None
+    def _reject_external_target(session: GameSession, target: str) -> str:
+        session.invalid_action_count += 1
+        session.score = max(0, session.score - 2)
+        text = f"纸上靶场拒绝访问场景外目标 {target}。当前允许的虚构目标只有 {session.scenario.target_ip}。"
+        session.emit("system", text)
+        return text
+
+    @staticmethod
+    def _grade(score: int) -> str:
+        if score >= 95:
+            return "S"
+        if score >= 85:
+            return "A"
+        if score >= 70:
+            return "B"
+        return "C"
