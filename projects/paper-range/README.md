@@ -1,43 +1,101 @@
 # Paper Range / 纸上靶场
 
-Paper Range 是 AI-Agent 仓库里的叙事式安全推演实验场。它不是把真实扫描器包装进网页，而是把用户的自然语言/命令映射成 **Action Contract → WorldState → Narrative/Event → UI**，所有网络目标和结果都由模拟器生成。
+Paper Range 是 AI-Agent 仓库里的叙事式安全推演实验场。它不是把真实扫描器包装进网页，而是把用户的自然语言/命令映射成 **Typed Action Contract → Simulated Runtime → WorldState → Narrative/Event → UI**。所有目标、服务、目录、凭据和结果都由模拟器生成，不向真实网络发包。
 
-## 当前 MVP Vertical Slice
-
-已经打通：
+## 当前可玩链路
 
 ```text
-选择/随机战役
+选择 / 随机战役
   ↓
 创建临时 Session
   ↓
-输入自然语言或模拟命令
+端口侦察
   ↓
-Action Classifier
+Web 初查
   ↓
-Simulated Tool Runtime
+隐藏路径枚举
   ↓
-WorldState / Objective / Clue 更新
+证据文件读取
   ↓
-React UI 实时展示
+模拟 SSH 验证
   ↓
-完成任务并获得 Flag
+Flag + 学习报告
 ```
 
-当前包含 3 个虚构战役：
+用户可以输入自然语言，也可以输入“看起来像命令”的文本；这些字符串只会被解析为 Typed Intent，不会交给系统 shell：
+
+```text
+nmap -p- <scene-target>              → scan_ports
+curl http://<scene-target>           → inspect_web
+dirsearch -u http://<scene-target>   → enumerate_paths
+cat /discovered/evidence             → inspect_file
+ssh user@<scene-target>               → ssh_access
+```
+
+自然语言示例：
+
+```text
+我先扫描所有 TCP 端口
+检查一下 Web 服务
+枚举隐藏目录
+读取刚才发现的证据文件
+用发现的训练身份登录主机
+```
+
+## 场景
+
+当前包含 6 个虚构战役：
 
 - `废弃研究所`：Web / Linux 入门；
 - `企业内网残影`：服务发现 / 内网剧情；
-- `地下交易市场`：叙事侦察 / Web。
+- `地下交易市场`：叙事侦察 / Web；
+- `市政档案馆断电夜`：Web / Evidence Trail；
+- `轨道中继站静默协议`：Ops / Telemetry；
+- `赤港夜班货运站`：Industrial / Narrative Ops。
 
-当前实现的模拟动作：
+每个战役目前都有 5 个核心 Objective：
 
-- `nmap -p- <scene-target>` / “扫描所有 TCP 端口”；
-- `curl http://<scene-target>` / “调查 Web 服务”；
-- `ssh <story-user>@<scene-target>` / “登录主机”；
-- `status` / `help`。
+1. 扫描开放端口；
+2. 调查 Web 服务；
+3. 枚举隐藏路径；
+4. 读取证据文件；
+5. 建立模拟访问。
 
-> 这些动作不会调用系统 `nmap`、`curl`、`ssh`，也不会向网络发包。输入场景之外的 IP 会被 Runtime 拒绝。
+## 剧情秘密边界
+
+`GET /api/scenarios` 只返回前端需要的公开战役元数据。以下信息保留在后端完整 `Scenario` 中，不会在进入战役前下发给浏览器：
+
+- 隐藏路径；
+- Web 观察正文；
+- 证据文件正文；
+- 训练密码；
+- 最终 Flag。
+
+当前 UI 为了显示模拟 SSH 快捷提示，仍会得到剧情用户名；密码和完成条件不会提前暴露。
+
+## Session 生命周期
+
+```text
+container start
+  ↓
+全新的 SessionStore
+  ↓
+本次运行期间持续复用 WorldState / Clue / Event / Score
+  ↓
+container stop/remove
+  ↓
+内存状态消失
+  ↓
+下一次启动 = 新世界
+```
+
+当前实现：
+
+- 不写 PostgreSQL；
+- 不写 Redis；
+- 不写宿主机文件；
+- `docker-compose.yml` 不挂载游戏数据卷；
+- 后端容器重启即丢失全部游戏 Session。
 
 ## 一键启动
 
@@ -59,32 +117,6 @@ http://127.0.0.1:8080
 ```text
 http://127.0.0.1:8080/health
 ```
-
-## Session 生命周期
-
-这是本项目必须保持的语义：
-
-```text
-container start
-  ↓
-全新的 SessionStore
-  ↓
-本次运行期间持续复用 WorldState / Clue / Event
-  ↓
-container stop/remove
-  ↓
-内存状态消失
-  ↓
-下一次启动 = 新世界
-```
-
-实现上当前使用 `SessionStore` 进程内字典：
-
-- 不写 PostgreSQL；
-- 不写 Redis；
-- 不写宿主机文件；
-- `docker-compose.yml` 不挂载数据卷；
-- 后端容器重启即丢失全部游戏 Session。
 
 ## 本地开发
 
@@ -117,6 +149,8 @@ GET    /api/scenarios
 POST   /api/sessions
 GET    /api/sessions/{session_id}
 POST   /api/sessions/{session_id}/actions
+POST   /api/sessions/{session_id}/hint
+GET    /api/sessions/{session_id}/report
 DELETE /api/sessions/{session_id}
 ```
 
@@ -138,18 +172,35 @@ DELETE /api/sessions/{session_id}
 
 ```json
 {
-  "input": "我先扫描所有 TCP 端口"
+  "input": "枚举隐藏目录"
 }
 ```
 
-## 当前边界与下一步
+## 学习循环
 
-这一版的目标是验证核心玩法闭环，不是一次性完成 40 套主题。下一阶段优先级：
+每个 Session 记录：
 
-1. 把 Action Classifier 从规则路由升级为结构化 Agent Intent Parser；
-2. 增加目录枚举、HTTP 请求变体、文件/日志调查、模拟凭据与权限状态；
-3. 增加 Story Graph、Branch/Consequence、Hint、评分与复盘；
-4. 将 3 个 CSS Theme 扩展为可注册的 Theme Pack，并逐步增加到 40 套；
-5. 加入 SSE/WebSocket 事件流；
-6. 增加 E2E 测试与 Docker smoke test；
-7. 把 Paper Range 注册到 AI-Agent Skill/Project Orchestrator，形成可发现能力。
+- Score；
+- Action Count；
+- Hint Count；
+- Invalid Action Count；
+- 完成 Objective；
+- Clue / Event；
+- 最终 Grade 与学习报告。
+
+Hint 每次扣 10 分；无效动作和场景外目标会扣少量分。场景外 IP 会 fail-closed，Runtime 只接受当前虚构 Scenario 注册的目标。
+
+## AI-Agent Skill 集成
+
+仓库已经注册 `agent-paper-range-designer`，用于设计 Paper Range 的 simulation-only Scenario / Action / WorldState / Story / Learning / Theme contracts，并由 Master / Project Orchestrator 路由相关任务。
+
+## 下一阶段
+
+当前重点已经从“能不能玩”转向“内容规模和表现力”：
+
+1. Theme Pack 注册机制，从 3 套扩展到 10+，最终目标 40 套；
+2. Story Graph / Branch / Consequence，让不同动作改变剧情路径；
+3. SSE / WebSocket 事件流，让 Agent、剧情和终端反馈逐步出现；
+4. 增加更多 simulation-only 工具动作，例如 HTTP 变体、日志检索、资产关系调查；
+5. E2E 浏览器测试和 Docker smoke test；
+6. 场景生成器与难度/评分策略进一步数据化。

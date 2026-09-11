@@ -9,7 +9,7 @@ from .models import (
     GameSessionView,
     HintResponse,
     LearningReport,
-    Scenario,
+    ScenarioPublic,
     SessionCreateRequest,
 )
 from .runtime import GameRuntime, SessionStore
@@ -21,7 +21,7 @@ runtime = GameRuntime(store)
 
 app = FastAPI(
     title="Paper Range API",
-    version="0.2.0",
+    version="0.3.0",
     description="Ephemeral narrative cyber-range simulator for AI-Agent.",
 )
 app.add_middleware(
@@ -38,8 +38,10 @@ def health() -> dict[str, object]:
     return {"status": "ok", "sessions": store.count(), "persistence": "process-memory-only"}
 
 
-@app.get("/api/scenarios", response_model=list[Scenario])
-def scenarios() -> list[Scenario]:
+@app.get("/api/scenarios", response_model=list[ScenarioPublic])
+def scenarios() -> list[ScenarioPublic]:
+    # FastAPI/Pydantic response filtering intentionally strips server-only evidence,
+    # hidden paths, passwords and flags from pre-game scenario metadata.
     return list_scenarios()
 
 
